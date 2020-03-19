@@ -1,0 +1,4 @@
+DB_HOST=freshonions-torscraper-db
+DB_USER=torscraper
+DB_PASS=password
+DB_BASE=tor

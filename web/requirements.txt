@@ -1,0 +1,30 @@
+# TODO: slim down the requirements
+pony
+PyMySQL
+py-pretty
+elasticsearch>=5.0.0,<6.0.0
+elasticsearch-dsl>=5.0.0,<6.0.0
+python-dateutil
+# removed to see if web interface works w/o this
+#numpy
+#scipy
+#scikit-learn
+#sklearn
+# build fails, is it really required?
+#pillow
+#gensim
+#tabulate
+#app
+#networkx
+#paramiko
+crypto
+pycrypto
+SHA256
+langdetect
+pycountry
+python-memcached
+flask
+timeout_decorator
+pretty
+PyPyDispatcher>=2.1.0
+urllib3==1.21.1
