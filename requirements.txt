@@ -28,3 +28,4 @@ sklearn
 paramiko
 PyPyDispatcher>=2.1.0
 urllib3==1.24.2
+cachelib

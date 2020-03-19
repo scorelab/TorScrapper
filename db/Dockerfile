@@ -1,4 +1,4 @@
-FROM mariadb:10.2
+FROM mariadb:latest
 ENV MYSQL_USER=torscraper
 ENV MYSQL_PASSWORD=password
 ENV MYSQL_DATABASE=tor
