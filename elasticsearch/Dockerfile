@@ -1,4 +1,4 @@
-FROM docker.elastic.co/elasticsearch/elasticsearch:5.6.10
+FROM docker.elastic.co/elasticsearch/elasticsearch:7.6.1
 
 MAINTAINER Olivier Bilodeau <obilodeau@gosecure.ca>
 
@@ -19,6 +19,8 @@ WORKDIR /opt/torscraper
 COPY ../requirements.txt /opt/torscraper
 RUN pip install --no-cache-dir -r ../requirements.txt
 RUN pip install --upgrade requests
+
+RUN sysctl -w vm.max_map_count=262144
 
 # move codebase over
 COPY ../* /opt/torscraper

@@ -2,8 +2,8 @@
 pony
 PyMySQL
 py-pretty
-elasticsearch>=5.0.0,<6.0.0
-elasticsearch-dsl>=5.0.0,<6.0.0
+elasticsearch
+elasticsearch-dsl
 python-dateutil
 # removed to see if web interface works w/o this
 #numpy
@@ -26,5 +26,6 @@ python-memcached
 flask
 timeout_decorator
 pretty
-PyPyDispatcher>=2.1.0
-urllib3==1.24.2
+PyPyDispatcher
+urllib3
+cachelib

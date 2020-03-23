@@ -34,7 +34,7 @@ services:
 
   elasticsearch:
     #image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.3.0
-    image: elasticsearch:5.6.10
+    image: elasticsearch:7.6.1
     container_name: elasticsearch
     environment:
       - cluster.name=docker-cluster
@@ -52,7 +52,7 @@ services:
 
   kibana:
     #image: docker.elastic.co/kibana/kibana-oss:6.3.0
-    image: kibana:5.6.10
+    image: kibana:7.6.1
     environment:
       SERVER_NAME: kibana
       ELASTICSEARCH_URL: http://freshonions-torscraper-elasticsearch:9200

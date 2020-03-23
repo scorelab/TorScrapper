@@ -1,8 +1,8 @@
 import os
 from datetime import *
 from elasticsearch_dsl.connections import connections
-from elasticsearch_dsl import DocType, Date, Nested, Boolean, MetaField
-from elasticsearch_dsl import analyzer, InnerObjectWrapper, Text, Integer
+from elasticsearch_dsl import Document, Date, Nested, Boolean, MetaField
+from elasticsearch_dsl import analyzer, InnerDoc, Text, Integer
 from elasticsearch import serializer, compat, exceptions
 from elasticsearch_dsl import Search
 from elasticsearch_dsl import Q
@@ -92,7 +92,7 @@ def elasticsearch_pages(context, sort, page):
 def is_elasticsearch_enabled():
     return ('ELASTICSEARCH_ENABLED' in os.environ and os.environ['ELASTICSEARCH_ENABLED'].lower()=='true')
 
-class DomainDocType(DocType):
+class DomainDocument(Document):
     title = Text(analyzer="snowball")
     created_at = Date()
     visited_at = Date()
@@ -109,7 +109,7 @@ class DomainDocType(DocType):
 
     class Meta:
         name = 'domain'
-        doc_type = 'domain'
+        document = 'domain'
 
     @classmethod
     def get_indexable(cls):
@@ -139,7 +139,7 @@ class DomainDocType(DocType):
     	dom.update(is_up=is_up)
 
 
-class PageDocType(DocType):
+class PageDocument(Document):
     html_strip = analyzer('html_strip', 
         tokenizer="standard",
         filter=["standard", "lowercase", "stop", "snowball", "asciifolding"],
@@ -159,7 +159,7 @@ class PageDocType(DocType):
 
     class Meta:
         name = 'page'
-        doc_type = 'page'
+        document = 'page'
         parent = MetaField(type='domain')
 
     @classmethod
@@ -186,15 +186,15 @@ hidden_services = None
 if is_elasticsearch_enabled():
     connections.create_connection(hosts=[os.environ['ELASTICSEARCH_HOST']], serializer=JSONSerializerPython2(), timeout=int(os.environ['ELASTICSEARCH_TIMEOUT']))
     hidden_services = Index('hiddenservices')
-    hidden_services.doc_type(DomainDocType)
-    hidden_services.doc_type(PageDocType)
+    hidden_services.document(DomainDocument)
+    hidden_services.document(PageDocument)
 
 def migrate():
     hidden_services = Index('hiddenservices')
     hidden_services.delete(ignore=404)
     hidden_services = Index('hiddenservices')
-    hidden_services.doc_type(DomainDocType)
-    hidden_services.doc_type(PageDocType)
+    hidden_services.document(DomainDocument)
+    hidden_services.document(PageDocument)
     hidden_services.settings(number_of_shards=8, number_of_replicas=1)
     hidden_services.create()
 
