@@ -142,7 +142,7 @@ class DomainDocument(Document):
 class PageDocument(Document):
     html_strip = analyzer('html_strip', 
         tokenizer="standard",
-        filter=["standard", "lowercase", "stop", "snowball", "asciifolding"],
+        filter=["lowercase", "stop", "snowball", "asciifolding"],
         char_filter=["html_strip"]
     )
 
@@ -160,7 +160,7 @@ class PageDocument(Document):
     class Meta:
         name = 'page'
         document = 'page'
-        parent = MetaField(type='domain')
+    #    parent = MetaField(type='domain')
 
     @classmethod
     def get_indexable(cls):
@@ -191,11 +191,10 @@ if is_elasticsearch_enabled():
 
 def migrate():
     hidden_services = Index('hiddenservices')
-    hidden_services.delete(ignore=404)
-    hidden_services = Index('hiddenservices')
     hidden_services.document(DomainDocument)
     hidden_services.document(PageDocument)
     hidden_services.settings(number_of_shards=8, number_of_replicas=1)
+    print hidden_services
     hidden_services.create()
 
 tracer = logging.getLogger('elasticsearch')
