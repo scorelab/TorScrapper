@@ -19,3 +19,14 @@ class Server(Page):
     models = {"domain": self._ddtModel, "crawler": self._crawlerModel, "radviz": self._radvizModel}
     super(Server, self).__init__(models, path)
 
+@cherrypy.expose
+  def seedcrawler(self):
+    return open(os.path.join(self._HTML_DIR, u"index.html"))
+
+  @cherrypy.expose
+  def release(self):
+    return open(os.path.join(self._HTML_DIR, u"release.html"))
+
+  @cherrypy.expose
+  def index(self):
+    return self.seedcrawler()
