@@ -134,6 +134,29 @@ class Home extends Component {
 
   
   render(){
+
+    const actionsDuplicateDomainName = [
+        <FlatButton
+          label="Ok"
+          primary={true}
+          onTouchTap={this.handleCloseDuplicateDomainName}
+        />,
+      ];
+
+    const actionsDeleteDomain = [
+        <FlatButton
+          label="Cancel"
+          primary={true}
+          onTouchTap={this.handleCloseDeleteDomain}
+        />,
+        <FlatButton
+          label="Submit"
+          primary={true}
+          keyboardFocused={true}
+          onTouchTap={this.deleteDomains.bind(this)}
+        />,
+      ];
+
        const actionsCreateDomain = [
       <FlatButton
         label="Cancel"
@@ -148,27 +171,105 @@ class Home extends Component {
       />,
     ];
 
-    const actionsDeleteDomain = [
-      <FlatButton
-        label="Cancel"
-        primary={true}
-        onTouchTap={this.handleCloseDeleteDomain}
-      />,
-      <FlatButton
-        label="Submit"
-        primary={true}
-        keyboardFocused={true}
-        onTouchTap={this.deleteDomains.bind(this)}
-      />,
-    ];
-
-    const actionsDuplicateDomainName = [
-      <FlatButton
-        label="Ok"
-        primary={true}
-        onTouchTap={this.handleCloseDuplicateDomainName}
-      />,
-    ];
+    if(this.state.domains!==undefined){
+        var mydata = this.state.domains;
+        return (
+          <div>
+            <AppBar showMenuIconButton={true}
+              style={{background: "#50137A"}}
+              title={  <span style={{color: 'white'}}> Domain Discovery Tool </span>}
+              iconElementLeft={<img alt="logo NYU" src={logoNYU}  height='45' width='40' />}
+            >
+            </AppBar>
+            <div className="jumbotron col-sm-12 text-center">
+              <div style={{ marginLeft:'25%'}}>
+                <Row>
+                <Col xs={4} md={4}>
+                    <Link to='/'>
+                      <RaisedButton
+                        label="Add Domain"
+                        labelStyle={{textTransform: "capitalize", color:"#323232" }}
+                        backgroundColor={this.props.backgroundColor}
+                        icon={<AddBox color={"#323232"} />}
+                        style={{margin:'70px 10px 30px 10px'}}
+                        onTouchTap={this.handleOpenCreateDomain.bind(this)}
+                      />
+                      <RaisedButton
+                        label="Delete Domain"
+                        labelStyle={{textTransform: "capitalize", color:"#323232"}}
+                        backgroundColor={this.props.backgroundColor}
+                        icon={<DeleteForever color={"#323232"} />}
+                        style={{margin:'70px 10px 30px 10px'}}
+                        onTouchTap={this.handleOpenDeleteDomain.bind(this)}
+                      />
+                    </Link>
+                    <Dialog
+                     title="Adding a domain"
+                     actions={actionsCreateDomain}
+                     modal={true}
+                     open={this.state.openCreateDomain}
+                     onRequestClose={this.handleCloseCreateDomain.bind(this)}
+                    >
+                       <TextField style={{width:'268px', fontSize: 12, borderColor: 'gray', borderWidth: 1, background:"white", borderRadius:"1px"}}
+                        ref={(input) => { this.textInput = input;}}
+                        value={this.state.newNameDomain}
+                        onChange={this.handleTextChangeNewNameDomain.bind(this)}
+                        onKeyPress={(e) => {(e.key === 'Enter') ? this.createNewDomain(this) : null}}
+                        hintText="Write the name domain."
+                        hintStyle={{ marginLeft:10}}
+                        inputStyle={{marginBottom:10, marginLeft:10, paddingRight:20}}
+                       />
+                     </Dialog>
+  
+                     <Dialog
+                      title="Deleting a domain"
+                      actions={actionsDeleteDomain}
+                      modal={true}
+                      open={this.state.openDeleteDomain}
+                      onRequestClose={this.handleCloseDeleteDomain.bind(this)}
+                     >
+                         <div style={{height:430, overflowY: "scroll",}}>
+                            {Object.keys(mydata).map((k, index)=>{
+                                return <Checkbox
+                                             label={mydata[k].name}
+                                             value={mydata[k].id}
+                                             style={styles.checkbox}
+                                           onClick={this.addDelDomains.bind(this,mydata[k].id,mydata[k].index)}
+                                         />
+                              })}
+                          </div>
+                     </Dialog>
+                     <Dialog
+                        title="Duplicate Domain Name"
+                        actions={actionsDuplicateDomainName}
+                        modal={false}
+                        open={this.state.openDuplicateDomainName}
+                        onRequestClose={this.handleCloseDuplicateDomainName.bind(this)}
+                      >
+                        The domain name was already entered. All domain names must be unique. Please try again.
+                      </Dialog>
+                  </Col>
+                  <Col xs={6} md={6} style={styles.listDomains}>
+                    <List>
+                      <Subheader style={{color:'black'}}><h2>Domains</h2></Subheader>
+                      {Object.keys(mydata).map((k, index)=>{
+                        return <Link to={{ pathname: `/domain/{mydata[k].index}`, query: { nameDomain: mydata[k].name, idDomain: mydata[k].id} }}  text={"Machine Learning"}>
+                                  <ListItem key={index} style={{textAlign: 'left'}}
+                                  primaryText={mydata[k].name}
+                                  rightIcon={<Forward />} />
+                                </Link>
+                      })}
+                    </List>
+                  </Col>
+                </Row>
+              </div>
+            </div>
+          </div>
+        );
+      }
+      return(
+        <div></div>
+      );
   }
 
 }
