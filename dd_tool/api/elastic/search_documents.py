@@ -200,3 +200,106 @@ def multifield_query_search(s_fields, start=0, pageCount=100, fields = [], es_in
                 results.append(fields)
 
         return {"total": res['hits']['total'], 'results':results}
+
+def search(field, queryStr, start=0, pageCount=100, fields = [], es_index='memex', es_doc_type='page', es=None):
+    if es is None:
+        es = default_es
+
+    if len(queryStr) > 0:
+        query = {
+            "query": {
+                "query_string": {
+                    "fields" : [field],
+                    "query": ' and  '.join(queryStr[0:]),
+                }
+            },
+            "fields": fields
+        }
+
+        res = es.search(body=query, index=es_index, doc_type=es_doc_type, from_=start, size=pageCount)
+        hits = res['hits']['hits']
+
+        results = []
+        for hit in hits:
+            fields = hit['fields']
+            fields['id'] = hit['_id']
+            fields['score'] = hit['_score']
+            results.append(fields)
+
+            return {"total": res['hits']['total'], 'results':results}
+
+def field_exists(field, fields, pagesCount, es_index='memex', es_doc_type='page', es=None):
+    if es is None:
+        es = default_es
+
+    query = {
+        "query" : {
+            "filtered" : {
+                "filter" : {
+                    "exists" : { "field" : field }
+                }
+            }
+        },
+        "fields": fields
+    }
+
+    res = es.search(body=query, index=es_index, doc_type=es_doc_type, size=pagesCount)
+    hits = res['hits']['hits']
+
+    results = []
+    for hit in hits:
+        fields = hit['fields']
+        fields['id'] = hit['_id']
+        fields['score'] = hit['_score']
+        results.append(fields)
+
+    return results
+
+
+if __name__ == "__main__":
+    print sys.argv[1:]
+    if 'string' in sys.argv[1]:
+        print search(sys.argv[2], sys.argv[3:])
+    elif 'term' in sys.argv[1]:
+        for url in term_search(sys.argv[2], sys.argv[3:]):
+            print url
+    elif 'context' in sys.argv[1]:
+        print get_context(sys.argv[2:])
+    elif 'image' in sys.argv[1]:
+        get_image(sys.argv[2])
+    elif 'range' in sys.argv[1]:
+        epoch = True
+        if len(sys.argv) == 7:
+            if 'False' in sys.argv[6]:
+                epoch = False
+        print range(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5].split(','), epoch, es_index='memex')
+
+def field_missing(field, fields, pagesCount, es_index='memex', es_doc_type='page', es=None):
+    if es is None:
+        es = default_es
+
+    query = {
+        "query" : {
+            "filtered" : {
+                "filter" : {
+                    "missing" : { "field" : field }
+                }
+            }
+        },
+        "fields": fields
+    }
+
+    res = es.search(body=query, index=es_index, doc_type=es_doc_type, size=pagesCount, request_timeout=600)
+    hits = res['hits']['hits']
+
+    results = []
+    for hit in hits:
+        if hit.get('fields') != None:
+            fields = hit['fields']
+        else:
+            fields = {}
+        fields['id'] = hit['_id']
+        fields['score'] = hit['_score']
+        results.append(fields)
+
+    return results
