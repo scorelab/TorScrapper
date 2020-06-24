@@ -94,3 +94,109 @@ def get_image(url, es_index='memex', es_doc_type='page', es=None):
         else:
             print "No thumbnail found"
     return [None, None]
+
+def multifield_term_search(s_fields, start=0, pageCount=100, fields=[], es_index='memex', es_doc_type='page', es=None):
+    if es is None:
+        es = default_es
+
+    query = {}
+    queries = []
+    match_queries = []
+    filter_q = None
+    sort_q = None
+
+    for k,v in s_fields.items():
+        if "queries" in k:
+            queries.extend(v)
+        elif "filter" in k:
+            filter_q = v
+        elif "sort" in k:
+            sort_q = v
+        elif "multi_match" in k:
+            for item in v:
+                match_query = {
+                    "multi_match": {
+                        "query": item[0],
+                        "fields": item[1],
+                        "type": "cross_fields",
+                        "operator": "and"
+                    }
+                }
+                match_queries.append(match_query)
+        else:
+            match_query = {
+                "match": {
+                    k: {
+                        "query": v,
+                        "minimum_should_match":"100%"
+                    }
+                }
+            }
+            queries.append(match_query)
+        
+
+    query["query"] =  {
+            "bool": {
+                "must": queries,
+                "should": match_queries
+            }
+        }
+    query["fields"] = fields
+
+    if filter_q is not None:
+        query["filter"] = filter_q
+
+    if sort_q is not None:
+        query["sort"] = sort_q
+        
+    #print "\n\n\n MULTIFIELD TERM SEARCH \n", query,"\n\n\n"
+
+    res = es.search(body=query, index=es_index, doc_type=es_doc_type, from_=start, size=pageCount)
+    hits = res['hits']['hits']
+
+    results = []
+    for hit in hits:
+        fields = hit['fields']
+        fields['id'] = hit['_id']
+        fields['score'] = hit['_score']
+        results.append(fields)
+
+    return {"total": res['hits']['total'], 'results':results}
+
+
+def multifield_query_search(s_fields, start=0, pageCount=100, fields = [], es_index='memex', es_doc_type='page', es=None):
+    if es is None:
+        es = default_es
+
+    query = None
+    for field, value in s_fields.items():
+        if query is None:
+            query = "(" + field + ":" + value + ")"
+        else:
+            query = query + " AND " + "(" + field + ":" + value + ")"
+
+    if not query is None:
+        query = {
+            "query": {
+                "query_string": {
+                    "query": query
+                }
+            },
+            "fields": fields
+        }
+
+        res = es.search(body=query, index=es_index, doc_type=es_doc_type, from_=start, size=pageCount, request_timeout=600)
+
+        hits = res['hits']['hits']
+
+        results = []
+        for hit in hits:
+            if hit.get('fields') is None:
+                print hit
+            else:
+                fields = hit['fields']
+                fields['id'] = hit['_id']
+                fields['score'] = hit['_score']
+                results.append(fields)
+
+        return {"total": res['hits']['total'], 'results':results}
