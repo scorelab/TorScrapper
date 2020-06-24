@@ -303,3 +303,36 @@ def field_missing(field, fields, pagesCount, es_index='memex', es_doc_type='page
         results.append(fields)
 
     return results
+
+
+def range_search(field, from_val, to_val, ret_fields=[], epoch=True,  start=0, pagesCount = 200, es_index='memex', es_doc_type='page', es=None):
+    if es is None:
+        es = default_es_elastic
+
+    if epoch:
+        from_val = datetime.utcfromtimestamp(long(from_val)).strftime('%Y-%m-%dT%H:%M:%S')
+        to_val = datetime.utcfromtimestamp(long(to_val)).strftime('%Y-%m-%dT%H:%M:%S')
+
+    query = {
+        "query" : {
+            "range" : {
+                field : {
+                    "gt": from_val,
+                    "lte": to_val
+                }
+            },
+        },
+        "fields": ret_fields
+    }
+
+    res = es.search(body=query, index=es_index, doc_type=es_doc_type, from_=start, size=pagesCount, request_timeout=600)
+    hits = res['hits']['hits']
+
+    results = []
+    for hit in hits:
+        fields = hit['fields']
+        fields['id'] = hit['_id']
+        fields['score'] = hit['_score']        
+        results.append(fields)
+
+    return {"total": res['hits']['total'], 'results':results}
