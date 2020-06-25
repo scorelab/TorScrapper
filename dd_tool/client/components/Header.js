@@ -25,6 +25,42 @@ class Header extends Component {
         this.intervalFuncId = undefined;
     }
 
+    handleCloseCreateModel = () => {
+        this.setState({openCreateModel: false});
+        this.forceUpdate();
+      };
+   
+      handleCloseCancelCreateModel = () => {
+        this.setState({openCreateModel: false});
+        this.setState({  tagsPosCheckBox:["Relevant"], tagsNegCheckBox:["Irrelevant"],})
+        this.forceUpdate();
+      };
+   
+      handleOpenInfo = () => {
+         this.setState({openInfo: true});
+         this.forceUpdate();
+       };
+       
+    handleOnRequestChange = (event, value)=> {
+        var session = this.createSession(this.props.idDomain);
+        if(value === "2"){
+        this.getAvailableTags(session);
+        this.setState({ openCreateModel: true });
+        }
+        else if(value === "1"){
+        this.createModel();
+        }
+    }
+ 
+    handleOpenCreateModel = () => {
+      this.setState({openCreateModel: true});
+    };
+ 
+     handleCloseInfo = () => {
+       this.setState({openInfo: false});
+       this.forceUpdate();
+     };
+ 
     componentWillMount(){
         this.setState({currentDomain: this.props.currentDomain,});
         this.setStatusInterval();
@@ -39,6 +75,7 @@ class Header extends Component {
   
         return false;
       }
+
 
     createSession(domainId){
         var session = {};
@@ -100,7 +137,7 @@ class Header extends Component {
           }.bind(this)
         );
       }
-      
+
      startCrawler(){
         var session = this.createSession(this.props.idDomain);
         var message = "Running";
