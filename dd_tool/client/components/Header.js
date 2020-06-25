@@ -1,5 +1,77 @@
 import React, { Component } from 'react';
 import AppBar from 'material-ui/AppBar';
+import { } from 'material-ui/styles/colors';
+import IconMenu from 'material-ui/IconMenu';
+import MenuItem from 'material-ui/MenuItem';
+import RaisedButton from 'material-ui/RaisedButton';
+import FlatButton from 'material-ui/FlatButton';
+import Dialog from 'material-ui/Dialog';
+import Checkbox from 'material-ui/Checkbox';
+import CircularProgress from 'material-ui/CircularProgress';
+import Monitoring from './Monitoring.js';
+import IconButton from 'material-ui/IconButton';
+import {Toolbar, ToolbarSeparator, ToolbarTitle} from 'material-ui/Toolbar';
+import SwitchDomain from 'material-ui/svg-icons/action/exit-to-app';
+var ReactRouter = require('react-router');
+var Link = ReactRouter.Link;
+import Search from 'material-ui/svg-icons/action/search';
+import OpenInNewTab from 'material-ui/svg-icons/action/open-in-new';
+import MonitoringIcon from 'material-ui/svg-icons/action/track-changes';
+import TextField from 'material-ui/TextField';
+
+import {
+  Table,
+  TableBody,
+  TableHeader,
+  TableHeaderColumn,
+  TableRow,
+  TableRowColumn,
+} from 'material-ui/Table';
+import $ from 'jquery';
+
+import DropDownMenu from 'material-ui/DropDownMenu';
+
+const styles = {
+    toolBarHeader: {
+    width:'77%',
+    height:45,
+    marginTop:8,
+    marginRight:'-15px',
+    background:'#B39DDB',
+    borderRadius: '5px 5px 5px 5px',
+    borderStyle: 'solid',
+    borderColor: '#7E57C2#B39DDB',
+    borderWidth: '1px 0px 1px 0px'
+    },
+    toolBarCurrentDomain:{
+    marginLeft: '0px',
+    marginRight: '0px'
+    },
+    tittleCurrentDomain:{
+    fontSize: 15,
+    textTransform: 'uppercase',
+    color: 'black', fontWeight:'bold',
+    paddingLeft: '3px',
+    paddingRight: '0px',
+    marginTop: '-5px',
+    },
+    toolBarGroupChangeDomain:{
+    marginLeft: '0px',
+    marginRight: '2px'
+    },
+    buttons:{
+    margin: '-10px',
+    marginTop:5,
+    width:35,
+    border:0,
+    },
+    backgound: {
+        background: "#50137A"
+    },
+    titleText: {
+     color: 'white'
+   }
+};
 
 class Header extends Component {
 
