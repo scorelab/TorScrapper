@@ -39,7 +39,7 @@ class Header extends Component {
   
         return false;
       }
-      
+
     createSession(domainId){
         var session = {};
         session['search_engine'] = "GOOG";
@@ -85,4 +85,59 @@ class Header extends Component {
        this.props.filterKeyword(terms);
      }
 
+     stopCrawler(flag){
+        var session = this.createSession(this.props.idDomain);
+        var message = "Terminating";
+        this.setState({disableAcheInterfaceSignal:true, disableStopCrawlerSignal:true, disabledStartCrawler:true, messageCrawler:message,});
+        this.forceUpdate();
+        $.post(
+          '/stopCrawler',
+          {'session': JSON.stringify(session)},
+        function(message) {
+            this.props.updateFilterCrawlerData("stopCrawler");
+              this.setState({disableAcheInterfaceSignal:true, disableStopCrawlerSignal:true, disabledStartCrawler: false, messageCrawler:"",});
+            this.forceUpdate();
+          }.bind(this)
+        );
+      }
+      
+     startCrawler(){
+        var session = this.createSession(this.props.idDomain);
+        var message = "Running";
+        this.setState({disableAcheInterfaceSignal:false, disableStopCrawlerSignal:false, disabledStartCrawler:true, messageCrawler:message});
+        this.forceUpdate();
+        $.post(
+            '/startCrawler',
+            {'session': JSON.stringify(session)},
+            function(message) {
+              var disableStopCrawlerFlag = false;
+              var disableAcheInterfaceFlag = false;
+              var disabledStartCrawlerFlag = true;
+              if(message.toLowerCase() !== "running"){
+              disableStopCrawlerFlag = true;
+              disableAcheInterfaceFlag =true;
+              disabledStartCrawlerFlag = true;
+              }
+   
+              this.props.updateFilterCrawlerData("updateCrawler");
+              this.setState({ disableAcheInterfaceSignal: disableAcheInterfaceFlag, disableStopCrawlerSignal:disableStopCrawlerFlag, disabledStartCrawler:disabledStartCrawlerFlag, messageCrawler:message});
+              this.forceUpdate();
+            }.bind(this)
+        );
+      }
+   
+      acheInterfaceCrawler(flag){
+        var session = this.createSession(this.props.idDomain);
+        var message = "Terminating";
+        this.setState({disableAcheInterfaceSignal:true, disableStopCrawlerSignal:true, disabledStartCrawler:true, messageCrawler:message,});
+        this.forceUpdate();
+        $.post(
+          '/stopCrawler',
+          {'session': JSON.stringify(session)},
+          function(message) {
+            this.setState({disableAcheInterfaceSignal:true, disableStopCrawlerSignal:true, disabledStartCrawler: false, messageCrawler:""});
+            this.forceUpdate();
+          }.bind(this)
+        );
+      }
 }
