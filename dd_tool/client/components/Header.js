@@ -163,6 +163,78 @@ class Header extends Component {
         );
       }
    
+      getAvailableTags(session){
+        $.post(
+           '/getAvailableTags',
+           {'session': JSON.stringify(session), 'event': 'Tags'},
+           function(tagsDomain) {
+             this.setState({currentTags: tagsDomain['tags']}); //, session:this.props.session, tagString: JSON.stringify(this.props.session['selected_tags'])});
+             this.forceUpdate();
+           }.bind(this)
+         );
+      }
+      getCreatedModel(session){
+        $.post(
+           '/createModel',
+           {'session': JSON.stringify(session)},
+           function(model_file) {
+             var url = model_file;
+             window.open(url,'Download');
+             this.setState({loadingModel:false, disabledCreateModel:false})
+             this.forceUpdate();
+           }.bind(this)
+         );
+      }
+      //Create model
+      createModel(){
+        var session = this.createSession(this.props.idDomain); //createNewDomain
+        this.setState({loadingModel:true, disabledCreateModel:true});
+        this.forceUpdate();
+        this.getCreatedModel(session);
+      };
+   
+      addPosTags(tag){
+         var tags = this.state.tagsPosCheckBox;
+         if(tags.includes(tag)){
+           var index = tags.indexOf(tag);
+           tags.splice(index, 1);
+         }
+         else{
+           tags.push(tag);
+         }
+         this.setState({tagsPosCheckBox:tags})
+         this.forceUpdate();
+      }
+   
+      addNegTags(tag){
+         var tags = this.state.tagsNegCheckBox;
+         if(tags.includes(tag)){
+           var index = tags.indexOf(tag);
+           tags.splice(index, 1);
+         }
+         else{
+           tags.push(tag);
+         }
+         this.setState({tagsNegCheckBox:tags})
+         this.forceUpdate();
+      }
+   
+      handleOnRequestChange = (event, value)=> {
+          var session = this.createSession(this.props.idDomain);
+          if(value === "2"){
+       this.getAvailableTags(session);
+       this.setState({ openCreateModel: true });
+          }
+          else if(value === "1"){
+       this.createModel();
+          }
+      }
+   
+      handleChangeViewBody = (event, index, valueViewBody) => {
+        this.setState({valueViewBody:valueViewBody});
+        this.props.selectedViewBody(valueViewBody);
+      }
+   
       acheInterfaceCrawler(flag){
         var session = this.createSession(this.props.idDomain);
         var message = "Terminating";
