@@ -59,6 +59,42 @@ class Body extends Component{
         return session;
       }
 
+      openDockMenu(){
+        if(this.state.open){
+          this.closeMenu();
+          this.setState({
+            stateDomainInfoCard:false,
+            stateSearchCard:false,
+            stateFiltersCard:false,
+            stateTermsCard:false,
+        });}
+        else{
+          this.openMenu();
+          this.setState({
+            stateDomainInfoCard:false,
+            stateSearchCard:false,
+            stateFiltersCard:false,
+            stateTermsCard:false,
+          });
+        }
+      }
+
+      openMenu(){
+        this.setState({
+          size: 350,
+          iconDomainInfo:null,
+          open: !this.state.open,
+          sizeAvatar:25,
+        });
+      }
+
+      closeMenu(){
+        this.setState({
+          size: 60,
+          open: !this.state.open,
+          sizeAvatar:35,
+        });
+      }
       componentWillReceiveProps  = (newProps) => {
         if(newProps.reloadBody){
           let sessionTemp =  this.state.sessionBody;
