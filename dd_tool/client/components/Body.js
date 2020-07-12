@@ -163,12 +163,11 @@ class Body extends Component{
           <Snackbar
         open={this.state.update || this.state.intervalFuncId !== undefined}
         message={this.state.runCurrentQuery}
-          //autoHideDuration={(this.state.runCurrentQuery !== "process*concluded" && this.state.runCurrentQuery !== "*" )? 30000: (this.state.runCurrentQuery === "process*concluded")?2000: 0}
         />
         </Sidebar>
       )
     }
-    else //crawling view
+    else 
     {
       return(
         <div>
