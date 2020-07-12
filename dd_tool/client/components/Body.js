@@ -58,6 +58,25 @@ class Body extends Component{
     
         return session;
       }
+
+      componentWillReceiveProps  = (newProps) => {
+        if(newProps.reloadBody){
+          let sessionTemp =  this.state.sessionBody;
+          sessionTemp['filter']= (newProps.filterKeyword === '')?null:newProps.filterKeyword;
+          this.setState({sessionBody: sessionTemp, sessionString: JSON.stringify(sessionTemp)});
+        }
+        if(newProps.currentDomain === this.state.currentDomain){
+          return;
+        }
+    
+        this.setState({currentDomain: this.props.currentDomain});
+    
+      };
+      
+      componentWillMount() {
+        this.setState({currentDomain: this.props.currentDomain, sessionBody: this.createSession(this.props.currentDomain), sessionString: JSON.stringify(this.createSession(this.props.currentDomain)) });
+      }
+
     render(){
         if(this.props.selectedViewBody===1) 
     {
