@@ -113,6 +113,30 @@ class Body extends Component{
         this.setState({currentDomain: this.props.currentDomain, sessionBody: this.createSession(this.props.currentDomain), sessionString: JSON.stringify(this.createSession(this.props.currentDomain)) });
       }
 
+      deletedFilter(sessionTemp){
+        this.props.deletedFilter(sessionTemp["filter"]);
+        this.setState({
+            sessionBody:sessionTemp, sessionString: JSON.stringify(sessionTemp), stopApplyQueryOverView:true,
+        });
+        this.updateSession(sessionTemp);
+      }
+
+      applyFilterByQuery(term){
+        var session =this.state.sessionBody;
+        if(!this.state.stopApplyQueryOverView){
+          session['newPageRetrievalCriteria'] = "one";
+          session['pageRetrievalCriteria'] = "Queries";
+          session['selected_queries']=term;
+        }
+        this.updateSession(session);
+    
+      }
+      
+      reloadFilters(){
+        this.setState({update:true});
+        this.forceUpdate();
+        this.setState({update:false});
+      };
       shouldComponentUpdate(nextProps, nextState) {
         if (nextState.sessionString  === this.state.sessionString) {
            if(nextProps.updateCrawlerData=="updateCrawler" || nextProps.updateCrawlerData=="stopCrawler" || nextProps.filterKeyword !== null || nextProps.filterKeyword !== ""   || nextState.stateDomainInfoCard!==this.state.stateDomainInfoCard || nextState.stateSearchCard!==this.state.stateSearchCard || nextState.stateTermsCard!==this.state.stateTermsCard || nextState.stateFiltersCard!==this.state.stateFiltersCard){
@@ -132,7 +156,7 @@ class Body extends Component{
                    menu===2 ? this.setState({ stateDomainInfoCard:expanded, stateFiltersCard: !expanded, stateSearchCard: !expanded, stateTermsCard:!expanded}):
                    this.setState({stateTermsCard:expanded, stateDomainInfoCard:!expanded, stateFiltersCard: !expanded, stateSearchCard: !expanded}));
       }
-      
+
     render(){
         if(this.props.selectedViewBody===1) 
     {
