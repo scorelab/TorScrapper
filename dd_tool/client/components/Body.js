@@ -113,6 +113,16 @@ class Body extends Component{
         this.setState({currentDomain: this.props.currentDomain, sessionBody: this.createSession(this.props.currentDomain), sessionString: JSON.stringify(this.createSession(this.props.currentDomain)) });
       }
 
+      shouldComponentUpdate(nextProps, nextState) {
+        if (nextState.sessionString  === this.state.sessionString) {
+           if(nextProps.updateCrawlerData=="updateCrawler" || nextProps.updateCrawlerData=="stopCrawler" || nextProps.filterKeyword !== null || nextProps.filterKeyword !== ""   || nextState.stateDomainInfoCard!==this.state.stateDomainInfoCard || nextState.stateSearchCard!==this.state.stateSearchCard || nextState.stateTermsCard!==this.state.stateTermsCard || nextState.stateFiltersCard!==this.state.stateFiltersCard){
+             return true;
+           }
+           return false;
+         }
+          return true;
+      }
+      
     render(){
         if(this.props.selectedViewBody===1) 
     {
