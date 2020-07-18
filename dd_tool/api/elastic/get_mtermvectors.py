@@ -45,3 +45,12 @@ def terms_from_es_json(doc, rm_stopwords=True, rm_numbers=True, termstatistics =
         terms = {item[0]: terms[item[0]] for item in sorted_terms[0:MAX_TERMS]}
 
     return terms
+
+def pos_filter(pos_tags=['NN', 'NNS', 'NNP', 'NNPS', 'VBN', 'JJ'], docterms=[]):
+    tagged = nltk.pos_tag(docterms)
+    valid_words = [tag[0] for tag in tagged if tag[1] in pos_tags]
+    return valid_words
+
+def tfidf(tf, df, n_doc):
+    idf = math.log(n_doc / float(df))
+    return tf * idf
