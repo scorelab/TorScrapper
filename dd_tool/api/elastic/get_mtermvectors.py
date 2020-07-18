@@ -54,3 +54,112 @@ def pos_filter(pos_tags=['NN', 'NNS', 'NNP', 'NNPS', 'VBN', 'JJ'], docterms=[]):
 def tfidf(tf, df, n_doc):
     idf = math.log(n_doc / float(df))
     return tf * idf
+
+def getTermStatistics(all_hits, rm_stopwords=True, rm_numbers=True, pos_tags=[], term_freq=0, num_terms=MAX_TERMS, mapping=None, es_index='memex', es_doc_type='page', es=None):
+    if es is None:
+        es = default_es
+
+    stats = []
+    docs = []
+
+    ttf = {}
+    for i in range(0, len(all_hits), 10):
+        hits = all_hits[i:i+10]
+
+        term_res = es.mtermvectors(index=es_index,
+                                   doc_type=es_doc_type,
+                                   term_statistics=True, 
+                                   fields=mapping['text'], 
+                                   ids=hits)
+
+        for doc in term_res['docs']:
+            if doc.get('term_vectors'):
+                if mapping['text'] in doc['term_vectors']:
+                    docs.append(doc['_id'])
+                    res = terms_from_es_json(doc=doc, rm_stopwords=rm_stopwords, rm_numbers=rm_numbers, termstatistics=True, term_freq=term_freq, mapping=mapping)
+                    stats.append(res)
+                    for k in res.keys():
+                        ttf[k] = res[k]['ttf']
+
+
+    tfidfs = []
+    tfs = []
+    for stat in stats:
+        tfidf={k: stat[k]['tfidf'] for k in stat.keys()}
+        tfidfs.append(tfidf)
+        tf={k:stat[k]['tf'] for k in stat.keys()}
+        tfs.append(tf)
+
+    v_tfidf = DictVectorizer()
+    v_tf = DictVectorizer()
+
+    data = v_tfidf.fit_transform(tfidfs).toarray()
+    corpus = v_tfidf.get_feature_names()
+    tf_data = v_tf.fit_transform(tfs).toarray()
+    
+    if len(pos_tags) > 0:
+        filtered_words = pos_filter(pos_tags, corpus)
+        indices = [corpus.index(term) for term in corpus if term not in filtered_words]
+        corpus =  np.delete(corpus, indices)
+        corpus = corpus.tolist()
+        data =  np.delete(data, indices, 1)
+        tf_data =  np.delete(tf_data, indices, 1)
+
+        if len(corpus) > MAX_TERMS:
+            mean_tfidf = np.mean(data, axis=0)
+            indices = np.argsort(mean_tfidf)[::-1]
+            corpus = [corpus[i] for i in indices]
+            data = data[:, indices]
+            tf_data = tf_data[:, indices]
+            
+        ttf = {key:value for key, value in ttf.iteritems() if key in corpus}
+
+    result = [data, tf_data, ttf, corpus, docs]
+
+    del tfidfs
+    del tfs
+
+    return result
+
+def getTermFrequency(all_hits, rm_stopwords=True, rm_numbers=True, pos_tags=[], term_freq=0, mapping=None, es_index='memex', es_doc_type='page', es=None):
+    if es is None:
+        es = default_es
+
+    docs = []
+    stats = []
+    corpus = []
+
+    once = True
+    for i in range(0, len(all_hits), 10):
+        hits = all_hits[i:i+10]
+
+        term_res = es.mtermvectors(index=es_index,
+                                   doc_type=es_doc_type,
+                                   fields=mapping['text'], 
+                                   ids=hits) 
+
+        for doc in term_res['docs']:
+            if doc.get('term_vectors'):
+                if mapping['text'] in doc['term_vectors']:
+                    docs.append(doc['_id'])
+                    res = terms_from_es_json(doc=doc, rm_stopwords=rm_stopwords, rm_numbers=rm_numbers,  term_freq=term_freq, mapping=mapping)
+                    stats.append(res)
+
+    tfs = []
+    for stat in stats:
+        tf={}
+        tf={k:stat[k]['tf'] for k in stat.keys()}
+        tfs.append(tf)
+
+    v_tf = DictVectorizer()
+    data = v_tf.fit_transform(tfs).toarray()
+    corpus = v_tf.get_feature_names()
+
+    if len(pos_tags) > 0:
+        filtered_words = pos_filter(pos_tags, corpus)
+        indices = [corpus.index(term) for term in corpus if term not in filtered_words]
+        corpus =  np.delete(corpus, indices)
+        corpus = corpus.tolist()
+        data =  np.delete(data, indices, 1)
+
+    return [data, corpus, docs]
