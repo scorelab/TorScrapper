@@ -122,6 +122,16 @@ class Body extends Component{
          }
           return true;
       }
+
+      setActiveMenu (expanded, menu) {
+        if(!this.state.open){
+          this.openMenu();
+        }
+        var item = menu===0 ? this.setState({stateSearchCard: expanded,  stateFiltersCard :!expanded, stateDomainInfoCard:!expanded, stateTermsCard:!expanded}) :
+                   (menu===1 ? this.setState({stateFiltersCard: expanded, stateSearchCard: !expanded, stateDomainInfoCard:!expanded, stateTermsCard:!expanded}) :
+                   menu===2 ? this.setState({ stateDomainInfoCard:expanded, stateFiltersCard: !expanded, stateSearchCard: !expanded, stateTermsCard:!expanded}):
+                   this.setState({stateTermsCard:expanded, stateDomainInfoCard:!expanded, stateFiltersCard: !expanded, stateSearchCard: !expanded}));
+      }
       
     render(){
         if(this.props.selectedViewBody===1) 
