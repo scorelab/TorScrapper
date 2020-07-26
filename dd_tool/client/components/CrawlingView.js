@@ -1,5 +1,25 @@
 import React, { Component } from 'react';
+import Terms from './Terms';
+import DeepCrawling from './DeepCrawling';
+import FocusedCrawling from './FocusedCrawling';
+import {Tabs, Tab} from 'material-ui/Tabs';
+import SwipeableViews from 'react-swipeable-views';
+import { Col, Row} from 'react-bootstrap';
 
+const styles = {
+    slide: {
+      padding: 10,
+    },
+    content: {
+      marginTop: '5px',
+      marginRight: '5px',
+      marginBottom: '8px',
+      marginLeft: '5px',
+      backgroundColor: '#FFFFFF',
+      borderRadius: '10px 10px 10px 10px',
+    },
+  };
+  
 class CrawlingView extends Component {
     createSession(domainId){
         var session = {};
