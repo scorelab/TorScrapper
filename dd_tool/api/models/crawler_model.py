@@ -217,3 +217,81 @@ class CrawlerModel():
             return self._createModelZip(session)
 
         return "Model created successfully"
+
+    def createResultModel(self, session=None, relevantUrls=[], irrelevantUrls=[], unsureUrls=[], zip=True):
+        """
+        It saves the classified data in the <project>/data/<domain> directory.
+        If zip=True all generated files are zipped into a file.
+
+        Parameters:
+        session (json): should have domainId
+
+        Returns:
+        Zip file url or message text
+        """
+        path = self._path
+
+        es_info = self._esInfo(session["domainId"])
+
+        data_dir = path + "/data/"
+        data_domain  = data_dir + es_info['activeDomainIndex']
+
+        if (not isdir(data_domain)):
+            # Create dir if it does not exist
+            makedirs(data_domain)
+        else:
+            # Remove all previous files
+            for filename in listdir(data_domain):
+                if(isfile(filename)):
+                    remove(data_domain+"/"+filename)
+
+
+        seeds_file = data_domain +"/relevantseeds.txt"
+        print "Seeds path ", seeds_file
+        with open(seeds_file, 'w') as s:
+            for url in relevantUrls:
+                try:
+                    s.write(str(url) + '\n')
+                except IOError:
+                    _, exc_obj, tb = exc_info()
+                    f = tb.tb_frame
+                    lineno = tb.tb_lineno
+                    filename = f.f_code.co_filename
+                    linecache.checkcache(filename)
+                    line = linecache.getline(filename, lineno, f.f_globals)
+                    print 'EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj)
+
+        seeds_irr_file = data_domain +"/irrelevantseeds.txt"
+        print "Seeds Irrelevant path ", seeds_irr_file
+        with open(seeds_irr_file, 'w') as sn:
+            for url in irrelevantUrls:
+                try:
+                    sn.write(str(url) + '\n')
+                except IOError:
+                    _, exc_obj, tb = exc_info()
+                    f = tb.tb_frame
+                    lineno = tb.tb_lineno
+                    filename = f.f_code.co_filename
+                    linecache.checkcache(filename)
+                    line = linecache.getline(filename, lineno, f.f_globals)
+                    print 'EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj)
+
+        seeds_unsure_file = data_domain +"/unsureseeds.txt"
+        print "Seeds Unsure path ", seeds_unsure_file
+        with open(seeds_unsure_file, 'w') as un:
+            for url in unsureUrls:
+                try:
+                    un.write(str(url) + '\n')
+                except IOError:
+                    _, exc_obj, tb = exc_info()
+                    f = tb.tb_frame
+                    lineno = tb.tb_lineno
+                    filename = f.f_code.co_filename
+                    linecache.checkcache(filename)
+                    line = linecache.getline(filename, lineno, f.f_globals)
+                    print 'EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj)
+
+        if zip:
+            return self._createResultModelZip(session)
+
+        return "Model created successfully"
