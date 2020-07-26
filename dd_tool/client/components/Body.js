@@ -1,4 +1,67 @@
 import React, {Component} from 'react';
+import { Row, Col} from 'react-bootstrap';
+import DomainInfo from './DomainInfo';
+import Search from './Search';
+import Filters from './Filters';
+import Terms from './Terms';
+import Views from './Views';
+import CrawlingView from './CrawlingView';
+import '../css/Components.css';
+import 'react-checkbox-tree/lib/react-checkbox-tree.css';
+import 'react-select/dist/react-select.css';
+import Sidebar from 'react-sidebar';
+import Plus from 'material-ui/svg-icons/action/swap-horiz';
+import FloatingActionButton from 'material-ui/FloatingActionButton';
+import Snackbar from 'material-ui/Snackbar'; 
+
+import {Card, CardActions, CardHeader, CardText, CardMedia} from 'material-ui/Card';
+import {List, ListItem} from 'material-ui/List';
+import Subheader from 'material-ui/Subheader';
+
+const styles = {
+  button:{
+    marginTop:20,
+    paddingBottom:'-145px',
+    marginBottom:'-545px',
+    marginRight: 5,
+  },
+  contentHeaderMenuLink: {
+    textDecoration: 'none',
+    color: 'white',
+    padding: 8,
+  },
+  content: {
+    marginTop: '68px',
+    marginRight: '5px',
+    marginBottom: '8px',
+    marginLeft: '5px',
+    backgroundColor: '#FFFFFF',
+    borderRadius: '10px 10px 10px 10px',
+  },
+  avatar:{
+    margin:'-4px 8px 0px 0px',
+  },
+
+  card: {
+
+    borderStyle: 'solid',
+    borderColor: '#C09ED7',
+    background: 'white',
+    borderRadius: '0px 0px 0px 0px',
+    borderWidth: '0px 0px 1px 0px'
+  },
+  cardHeader:{
+    background: '#DCCCE7',
+    padding:'10px 1px 10px 6px',
+    borderRadius: '0px 0px 0px 0px',
+  },
+  cardMedia:{
+    background: '#DCCCE7',
+    padding:'2px 4px 2px 4px',
+    borderRadius: '0px 0px 0px 0px',
+    height: "200px",
+  },
+};
 
 class Body extends Component{
     constructor(props) {
@@ -157,6 +220,39 @@ class Body extends Component{
                    this.setState({stateTermsCard:expanded, stateDomainInfoCard:!expanded, stateFiltersCard: !expanded, stateSearchCard: !expanded}));
       }
 
+      updateSession(newSession){
+        this.setState({sessionBody: newSession , sessionString: JSON.stringify(newSession), stopApplyQueryOverView:true,});
+        this.forceUpdate();
+      }
+
+      updatePages(pages){
+        this.setState({pages:pages});
+      }
+
+      queryPagesDone(){
+        window.clearInterval(this.state.intervalFuncId);
+        this.setState({intervalFuncId:undefined, stopApplyQueryOverView:false,});
+      }
+
+      updateStatusMessage(value, term){
+        this.setState({update:value, runCurrentQuery: term});
+        this.forceUpdate();
+    }
+
+    getQueryPages(term){
+    if(this.state.intervalFuncId !== undefined)
+      this.queryPagesDone();
+
+    this.setState({stopApplyQueryOverView:false, intervalFuncId: window.setInterval(function() {this.applyFilterByQuery(term);}.bind(this), 1000)});
+
+    }
+    availableCrawlerButton(isthereModel){
+      this.props.availableCrawlerButton(isthereModel);
+    }
+
+    handlePageClick(offset, currentPagination){
+      this.setState({offset: offset, currentPagination:currentPagination});
+      }
     render(){
         if(this.props.selectedViewBody===1) 
     {
@@ -221,3 +317,6 @@ class Body extends Component{
     }
     }
 }
+
+
+export default Body;
