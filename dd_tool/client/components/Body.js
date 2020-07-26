@@ -157,6 +157,39 @@ class Body extends Component{
                    this.setState({stateTermsCard:expanded, stateDomainInfoCard:!expanded, stateFiltersCard: !expanded, stateSearchCard: !expanded}));
       }
 
+      updateSession(newSession){
+        this.setState({sessionBody: newSession , sessionString: JSON.stringify(newSession), stopApplyQueryOverView:true,});
+        this.forceUpdate();
+      }
+
+      updatePages(pages){
+        this.setState({pages:pages});
+      }
+
+      queryPagesDone(){
+        window.clearInterval(this.state.intervalFuncId);
+        this.setState({intervalFuncId:undefined, stopApplyQueryOverView:false,});
+      }
+
+      updateStatusMessage(value, term){
+        this.setState({update:value, runCurrentQuery: term});
+        this.forceUpdate();
+    }
+
+    getQueryPages(term){
+    if(this.state.intervalFuncId !== undefined)
+      this.queryPagesDone();
+
+    this.setState({stopApplyQueryOverView:false, intervalFuncId: window.setInterval(function() {this.applyFilterByQuery(term);}.bind(this), 1000)});
+
+    }
+    availableCrawlerButton(isthereModel){
+      this.props.availableCrawlerButton(isthereModel);
+    }
+
+    handlePageClick(offset, currentPagination){
+      this.setState({offset: offset, currentPagination:currentPagination});
+      }
     render(){
         if(this.props.selectedViewBody===1) 
     {
@@ -221,3 +254,6 @@ class Body extends Component{
     }
     }
 }
+
+
+export default Body;
