@@ -93,7 +93,6 @@ class CrawlingView extends Component {
           value={this.state.slideIndex}
           inkBarStyle={{background: '#7940A0' ,height: '4px'}}
           tabItemContainerStyle={{background:'#9A7BB0', height: '40px'}}>
-          >
             <Tab label="Deep crawling" value={0} />
             <Tab label="Focused crawling " value={1} />
           </Tabs>
