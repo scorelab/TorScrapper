@@ -1,5 +1,50 @@
 import React, {Component} from 'react';
 
+const styles = {
+  button:{
+    marginTop:20,
+    paddingBottom:'-145px',
+    marginBottom:'-545px',
+    marginRight: 5,
+  },
+  contentHeaderMenuLink: {
+    textDecoration: 'none',
+    color: 'white',
+    padding: 8,
+  },
+  content: {
+    marginTop: '68px',
+    marginRight: '5px',
+    marginBottom: '8px',
+    marginLeft: '5px',
+    backgroundColor: '#FFFFFF',
+    borderRadius: '10px 10px 10px 10px',
+  },
+  avatar:{
+    margin:'-4px 8px 0px 0px',
+  },
+
+  card: {
+
+    borderStyle: 'solid',
+    borderColor: '#C09ED7',
+    background: 'white',
+    borderRadius: '0px 0px 0px 0px',
+    borderWidth: '0px 0px 1px 0px'
+  },
+  cardHeader:{
+    background: '#DCCCE7',
+    padding:'10px 1px 10px 6px',
+    borderRadius: '0px 0px 0px 0px',
+  },
+  cardMedia:{
+    background: '#DCCCE7',
+    padding:'2px 4px 2px 4px',
+    borderRadius: '0px 0px 0px 0px',
+    height: "200px",
+  },
+};
+
 class Body extends Component{
     constructor(props) {
         super(props);
