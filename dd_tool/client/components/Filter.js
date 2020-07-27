@@ -4,6 +4,32 @@ import FiltersTabs from './FiltersTabs';
 import Avatar from 'material-ui/Avatar';
 import CheckList from 'material-ui/svg-icons/av/playlist-add-check';
 
+const styles = {
+    card: {
+      background: 'white',
+      borderRadius: '0px 0px 0px 0px',
+      borderStyle: 'solid',
+      borderColor: '#C09ED7',
+      borderWidth: '1px 0px 1px 0px'
+  
+    },
+    avatar:{
+      margin:'-4px 8px 0px 0px',
+    },
+    cardHeader:{
+      background: '#DCCCE7',
+      padding:'10px 1px 10px 6px',
+      borderRadius: '0px 0px 0px 0px',
+    },
+    cardMedia:{
+      background: '#DCCCE7',
+      padding:'0px 4px 2px 4px',
+      borderRadius: '0px 0px 0px 0px',
+      height: "500px",
+    },
+  
+  };
+  
 class Filters extends Component{
 
     constructor(props) {
