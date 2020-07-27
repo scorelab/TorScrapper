@@ -3,6 +3,35 @@ import {Card, CardHeader, CardMedia} from 'material-ui/Card';
 import Avatar from 'material-ui/Avatar';
 import $ from 'jquery';
 import Home from 'material-ui/svg-icons/action/home';
+
+
+const styles = {
+    card: {
+  
+      borderStyle: 'solid',
+      borderColor: '#C09ED7',
+      background: 'white',
+      borderRadius: '0px 0px 0px 0px',
+      borderWidth: '0px 0px 1px 0px'
+    },
+    avatar:{
+      margin:'-4px 8px 0px 0px',
+    },
+    cardHeader:{
+      background: '#DCCCE7',
+      padding:'10px 1px 10px 6px',
+      borderRadius: '0px 0px 0px 0px',
+    },
+    cardMedia:{
+      background: '#DCCCE7',
+      padding:'2px 4px 2px 4px',
+      borderRadius: '0px 0px 0px 0px',
+      border:'solid',
+      borderColor: '#C09ED7',
+    },
+  
+  };
+
 class DomainInfo extends Component{
 
     constructor(props) {
