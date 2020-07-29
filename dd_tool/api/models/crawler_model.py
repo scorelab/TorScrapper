@@ -237,4 +237,113 @@ def createRegExModel(self, terms=[], session=None, zip=True):
 
         return "Model created successfully"
 
-   
+def _createModelZip(self, session):
+
+       path = self._path
+
+       es_info = self._esInfo(session["domainId"])
+
+       data_dir = path + "/data/"
+
+       print data_dir
+       print es_info['activeDomainIndex']
+
+       data_domain  = data_dir + es_info['activeDomainIndex']
+       domainmodel_dir = data_domain + "/models/"
+
+       zip_dir = data_dir
+       saveClientSite = zip_dir.replace('server/data/','client/build/models/')
+       if (not isdir(saveClientSite)):
+           makedirs(saveClientSite)
+       zip_filename = saveClientSite + es_info['activeDomainIndex'] + "_model.zip"
+
+       with ZipFile(zip_filename, "w") as modelzip:
+           if (isfile(domainmodel_dir + "/pageclassifier.features")):
+               print "zipping file: "+domainmodel_dir + "/pageclassifier.features"
+               modelzip.write(domainmodel_dir + "/pageclassifier.features", "pageclassifier.features")
+
+           if (isfile(domainmodel_dir + "/pageclassifier.model")):
+               print "zipping file: "+domainmodel_dir + "/pageclassifier.model"
+               modelzip.write(domainmodel_dir + "/pageclassifier.model", "pageclassifier.model")
+
+           if (exists(data_domain + "/training_data/positive")):
+               print "zipping file: "+ data_domain + "/training_data/positive"
+               for (dirpath, dirnames, filenames) in walk(data_domain + "/training_data/positive"):
+                   for html_file in filenames:
+                       modelzip.write(dirpath + "/" + html_file, "training_data/positive/" + html_file)
+
+           if (exists(data_domain + "/training_data/negative")):
+               print "zipping file: "+ data_domain + "/training_data/negative"
+               for (dirpath, dirnames, filenames) in walk(data_domain + "/training_data/negative"):
+                   for html_file in filenames:
+                       modelzip.write(dirpath + "/" + html_file, "training_data/negative/" + html_file)
+
+           if (isfile(data_domain +"/seeds.txt")):
+               print "zipping file: "+data_domain +"/seeds.txt"
+               modelzip.write(data_domain +"/seeds.txt", es_info['activeDomainIndex'] + "_seeds.txt")
+               chmod(zip_filename, 0o777)
+
+           if (isfile(domainmodel_dir + "/pageclassifier.yml")):
+               print "zipping file: "+domainmodel_dir + "/pageclassifier.yml"
+               modelzip.write(domainmodel_dir + "/pageclassifier.yml", "pageclassifier.yml")
+
+
+       return "models/" + es_info['activeDomainIndex'] + "_model.zip"
+
+def _createResultModelZip(self, session):
+
+       path = self._path
+
+       es_info = self._esInfo(session["domainId"])
+
+       data_dir = path + "/data/"
+
+       data_domain  = data_dir + es_info['activeDomainIndex']
+       domainmodel_dir = data_domain + "/models/"
+
+       zip_dir = data_dir
+       saveClientSite = zip_dir.replace('server/data/','client/build/models/')
+       if (not isdir(saveClientSite)):
+           makedirs(saveClientSite)
+       zip_filename = saveClientSite + es_info['activeDomainIndex'] + "_results_model.zip"
+
+       with ZipFile(zip_filename, "w") as modelzip:
+           if (isfile(data_domain +"/relevantseeds.txt")):
+               print "zipping file: "+data_domain +"/relevantseeds.txt"
+               modelzip.write(data_domain +"/relevantseeds.txt", es_info['activeDomainIndex'] + "_relevant_seeds.txt")
+               chmod(zip_filename, 0o777)
+           if (isfile(data_domain +"/irrelevantseeds.txt")):
+               print "zipping file: "+data_domain +"/irrelevantseeds.txt"
+               modelzip.write(data_domain +"/irrelevantseeds.txt", es_info['activeDomainIndex'] + "_irrelevant_seeds.txt")
+               chmod(zip_filename, 0o777)
+           if (isfile(data_domain +"/unsureseeds.txt")):
+               print "zipping file: "+data_domain +"/unsureseeds.txt"
+               modelzip.write(data_domain +"/unsureseeds.txt", es_info['activeDomainIndex'] + "_unsure_seeds.txt")
+               chmod(zip_filename, 0o777)
+
+       return "models/" + es_info['activeDomainIndex'] + "_results_model.zip"
+
+   def addUrls(self, seeds, session):
+       domainId = session['domainId']
+
+       if self.getStatus('deep', session).get("crawlerState") == "RUNNING":
+           try:
+               payload = {"seeds": seeds}
+               r = requests.post(self._servers['deep']+"/seeds", data=json.dumps(payload))
+
+               if r.status_code == 200:
+                   response = json.loads(r.text)
+
+                   print "\n\n",type," Crawler Stop Response"
+                   pprint(response)
+                   print "\n\n"
+
+               elif r.status_code == 404 or r.status_code == 500:
+                   return "Failed to add urls"
+
+           except ConnectionError:
+               print "\n\nFailed to connect to server to add urls. Server may not be running\n\n"
+               return "Failed to connect to server. Server may not be running"
+
+       print "\n\n\nUrls Added\n\n\n"
+       return "Urls Added"
