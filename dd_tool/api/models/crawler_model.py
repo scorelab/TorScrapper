@@ -347,3 +347,133 @@ def _createResultModelZip(self, session):
 
        print "\n\n\nUrls Added\n\n\n"
        return "Urls Added"
+
+
+   
+   def startCrawler(self, type, seeds, terms, session):
+
+       domainId = session['domainId']
+
+       es_info = self._esInfo(domainId)
+
+       if self.runningCrawlers.get(domainId) is not None:
+           if self.runningCrawlers[domainId].get(type) is not None:
+               return self.runningCrawlers[domainId][type]['status']
+       elif self.getStatus(type, session).get("crawlerState") == "RUNNING":
+           self.runningCrawlers[domainId] = {type: {'domain': self._domains[domainId]['domain_name'], 'status': "Running" }}
+           return "Running"
+
+       if type == "focused":
+           if self.getStatus(type):
+               data_dir = self._path + "/data/"
+               data_domain  = data_dir + es_info['activeDomainIndex']
+               domainmodel_dir = data_domain + "/models/"
+               domainoutput_dir = data_domain + "/output/"
+
+               result = self.createModel(session, zip=True)
+               if "No irrelevant pages to build domain model" in result:
+                   if len(terms) > 0:
+                       result = self.createRegExModel(terms, session, zip=True)
+                       if "Model not created" in result:
+                           return "No regex domain model available"
+                   else:
+                       return "No page classifier or regex domain model available"
+
+               if (not isdir(domainmodel_dir)):
+                   return "No domain model available"
+
+               zip_dir = data_dir
+               saveClientSite = zip_dir.replace('server/data/','client/build/models/')
+               zip_filename = saveClientSite + es_info['activeDomainIndex'] + "_model.zip"
+               with open(zip_filename, "rb") as model_file:
+                   encoded_model = base64.b64encode(model_file.read())
+               payload = {"crawlType": "FocusedCrawl", "esIndexName": es_info['activeDomainIndex'], "esTypeName": es_info['docType'] , "seeds": [], "model":encoded_model}
+               try:
+                   r = requests.post(self._servers["focused"]+"/startCrawl", data=json.dumps(payload))
+
+                   if r.status_code == 200:
+                       response = json.loads(r.text)
+
+                       print "\n\nFocused Crawler Response"
+                       pprint(response)
+                       print "\n\n"
+
+                       if response["crawlerStarted"]:
+                           if self.runningCrawlers.get(domainId) is None:
+                               self.runningCrawlers[domainId] = {type: {'domain': self._domains[domainId]['domain_name'], 'status': "Running" }}
+                           else:
+                               self.runningCrawlers[domainId][type] = {'domain': self._domains[domainId]['domain_name'], 'status': "Running" }
+                               return "Running"
+                       else:
+                           return "Failed to run crawler"
+                   else:
+                       return "Failed to connect to server. Server may not be running"
+
+               except ConnectionError:
+                   print "\n\nFailed to connect to server to start crawler. Server may not be running\n\n"
+                   return "Failed to connect to server. Server may not be running"
+           else:
+               return "Failed to connect to server. Server may not be running"
+
+       elif type == "deep":
+           if len(seeds) == 0:
+               return "No seeds provided"
+
+           try:
+               payload = {"crawlType": "DeepCrawl", "esIndexName": es_info['activeDomainIndex'], "esTypeName": es_info['docType'], "seeds": seeds, "model":None}
+               r = requests.post(self._servers["deep"]+"/startCrawl", data=json.dumps(payload))
+
+               if r.status_code == 200:
+                   response = json.loads(r.text)
+
+                   print "\n\nDeep Crawler Response"
+                   pprint(response)
+                   print "\n\n"
+
+                   if response["crawlerStarted"]:
+                       if self.runningCrawlers.get(domainId) is None:
+                           self.runningCrawlers[domainId] = {type: {'domain': self._domains[domainId]['domain_name'], 'status': "Running" }}
+                       else:
+                           self.runningCrawlers[domainId][type] = {'domain': self._domains[domainId]['domain_name'], 'status': "Running" }
+                           return "Running"
+                   else:
+                       return "Failed to run crawler"
+               else:
+                   return "Failed to connect to server. Server may not be running"
+
+           except ConnectionError:
+               print "\n\nFailed to connect to server to start crawler. Server may not be running\n\n"
+               return "Failed to connect to server. Server may not be running"
+
+       return "Running in domain: " + self._domains[domainId]['domain_name']
+
+   def stopCrawler(self, type, session):
+
+       domainId = session['domainId']
+
+       if self.getStatus(type, session).get("crawlerState") == "RUNNING":
+           try:
+               r = requests.get(self._servers[type]+"/stopCrawl")
+
+               if r.status_code == 200:
+                   response = json.loads(r.text)
+
+                   print "\n\n",type," Crawler Stop Response"
+                   pprint(response)
+                   print "\n\n"
+
+                   if response["crawlerStopped"]:
+                       self.crawlerStopped(type, session)
+                   elif response["shutdownInitiated"]:
+                       self.runningCrawlers[domainId][type]['status'] = "Terminating"
+                       return "Terminating"
+
+               elif r.status_code == 404 or r.status_code == 500:
+                   return "Failed to stop crawler"
+
+           except ConnectionError:
+               print "\n\nFailed to connect to server to stop crawler. Server may not be running\n\n"
+               return "Failed to connect to server. Server may not be running"
+
+       print "\n\n\nCrawler Stopped\n\n\n"
+       return "Crawler Stopped"
