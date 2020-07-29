@@ -74,16 +74,6 @@ class CrawlerModel():
 
 
     def createModel(self, session=None, zip=True):
-        """ Create an ACHE model to be applied to SeedFinder and focused crawler.
-        It saves the classifiers, features, the training data in the <project>/data/<domain> directory.
-        If zip=True all generated files and folders are zipped into a file.
-
-        Parameters:
-        session (json): should have domainId
-
-        Returns:
-        Zip file url or message text
-        """
         path = self._path
 
         es_info = self._esInfo(session["domainId"])
@@ -95,18 +85,14 @@ class CrawlerModel():
         data_positive = data_domain + "/training_data/positive/"
 
         if (not isdir(data_positive)):
-            # Create dir if it does not exist
             makedirs(data_positive)
         else:
-            # Remove all previous files
             for filename in listdir(data_positive):
                 remove(data_positive+filename)
 
         if (not isdir(data_negative)):
-            # Create dir if it does not exist
             makedirs(data_negative)
         else:
-            # Remove all previous files
             for filename in listdir(data_negative):
                 remove(data_negative+filename)
 
@@ -125,7 +111,7 @@ class CrawlerModel():
 
         pos_docs = []
 
-        for tag in pos_tags: #.split(','):
+        for tag in pos_tags: 
             s_fields = {}
             query = {
                 "wildcard": {es_info['mapping']["tag"]:tag}
@@ -144,7 +130,7 @@ class CrawlerModel():
         pos_html = {field['url'][0]:field[es_info['mapping']["html"]][0] for field in pos_docs}
 
         neg_docs = []
-        for tag in neg_tags: #.split(','):
+        for tag in neg_tags:
             s_fields = {}
             query = {
                 "wildcard": {es_info['mapping']["tag"]:tag}
@@ -198,7 +184,6 @@ class CrawlerModel():
         if (not isdir(domainmodel_dir)):
             makedirs(domainmodel_dir)
         else:
-            # Remove all previous files
             for filename in listdir(domainmodel_dir):
                 remove(domainmodel_dir+filename)
 
@@ -218,80 +203,38 @@ class CrawlerModel():
 
         return "Model created successfully"
 
-    def createResultModel(self, session=None, relevantUrls=[], irrelevantUrls=[], unsureUrls=[], zip=True):
-        """
-        It saves the classified data in the <project>/data/<domain> directory.
-        If zip=True all generated files are zipped into a file.
+def createRegExModel(self, terms=[], session=None, zip=True):
+        if len(terms) == 0:
+            return "Model not created"
 
-        Parameters:
-        session (json): should have domainId
-
-        Returns:
-        Zip file url or message text
-        """
         path = self._path
 
         es_info = self._esInfo(session["domainId"])
 
         data_dir = path + "/data/"
         data_domain  = data_dir + es_info['activeDomainIndex']
+        domainmodel_dir = data_domain + "/models/"
 
-        if (not isdir(data_domain)):
-            # Create dir if it does not exist
-            makedirs(data_domain)
+        if (not isdir(domainmodel_dir)):
+            makedirs(domainmodel_dir)
         else:
-            # Remove all previous files
-            for filename in listdir(data_domain):
-                if(isfile(filename)):
-                    remove(data_domain+"/"+filename)
+            for filename in listdir(domainmodel_dir):
+                remove(domainmodel_dir+filename)
+        with open( domainmodel_dir+"/pageclassifier.yml", "w") as pc_f:
+            pc_f.write("type: regex\nparameters:\n    boolean_operator: \"OR\"\n")
 
+            patterns = ""
+            for term in terms:
+                patterns = patterns + "        - .*"+term+".*\n"
 
-        seeds_file = data_domain +"/relevantseeds.txt"
-        print "Seeds path ", seeds_file
-        with open(seeds_file, 'w') as s:
-            for url in relevantUrls:
-                try:
-                    s.write(str(url) + '\n')
-                except IOError:
-                    _, exc_obj, tb = exc_info()
-                    f = tb.tb_frame
-                    lineno = tb.tb_lineno
-                    filename = f.f_code.co_filename
-                    linecache.checkcache(filename)
-                    line = linecache.getline(filename, lineno, f.f_globals)
-                    print 'EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj)
-
-        seeds_irr_file = data_domain +"/irrelevantseeds.txt"
-        print "Seeds Irrelevant path ", seeds_irr_file
-        with open(seeds_irr_file, 'w') as sn:
-            for url in irrelevantUrls:
-                try:
-                    sn.write(str(url) + '\n')
-                except IOError:
-                    _, exc_obj, tb = exc_info()
-                    f = tb.tb_frame
-                    lineno = tb.tb_lineno
-                    filename = f.f_code.co_filename
-                    linecache.checkcache(filename)
-                    line = linecache.getline(filename, lineno, f.f_globals)
-                    print 'EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj)
-
-        seeds_unsure_file = data_domain +"/unsureseeds.txt"
-        print "Seeds Unsure path ", seeds_unsure_file
-        with open(seeds_unsure_file, 'w') as un:
-            for url in unsureUrls:
-                try:
-                    un.write(str(url) + '\n')
-                except IOError:
-                    _, exc_obj, tb = exc_info()
-                    f = tb.tb_frame
-                    lineno = tb.tb_lineno
-                    filename = f.f_code.co_filename
-                    linecache.checkcache(filename)
-                    line = linecache.getline(filename, lineno, f.f_globals)
-                    print 'EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj)
+            pc_f.write("    title:\n      boolean_operator: \"OR\"\n      regexes:\n")
+            pc_f.write(patterns)
+            pc_f.write("    content:\n      boolean_operator: \"OR\"\n      regexes:\n")
+            pc_f.write(patterns)
 
         if zip:
-            return self._createResultModelZip(session)
+            return self._createModelZip(session)
 
         return "Model created successfully"
+
+   
