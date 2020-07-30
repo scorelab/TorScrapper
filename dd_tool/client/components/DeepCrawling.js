@@ -26,6 +26,7 @@ import {
   const PAGE_COUNT = 2000000
 
 class DeepCrawling extends Component {
+
     componentWillUnmount() {
         clearInterval(this.recommendationInterval)
       }
@@ -42,7 +43,7 @@ class DeepCrawling extends Component {
         this.getPages(session);
         this.getRecommendations();
     }
-    
+
     constructor(props) {
         super(props);
           this.state = {
