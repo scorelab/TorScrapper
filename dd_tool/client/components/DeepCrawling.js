@@ -27,6 +27,86 @@ import {
 
 class DeepCrawling extends Component {
 
+     addDomainsForDeepCrawl(event) {
+	var aux_deepCrawlableDomains = [];
+	this.selectedRows.forEach((rowIndex) => {
+	    if(this.state.deepCrawlableDomains.indexOf(this.state.recommendations[rowIndex][0]) === -1)
+		aux_deepCrawlableDomains.push(this.state.recommendations[rowIndex][0]);
+	});
+
+	var session = this.props.session;
+	session['newPageRetrievalCriteria'] = "one";
+	session['pageRetrievalCriteria'] = "TLDs";
+	session['selected_tlds']=aux_deepCrawlableDomains.join(",");
+	session['pagesCap']=PAGE_COUNT;
+
+	$.post(
+	    '/getPages',
+	    {'session': JSON.stringify(session)},
+	    function(pages) {
+		var urlsfromRecommendations = Object.keys(pages["data"]["results"]).map(result=>{return result;});
+		this.setState({deepCrawlableUrls: urlsfromRecommendations.concat(this.state.deepCrawlableUrls)});
+		this.forceUpdate();
+	    }.bind(this)
+	);
+
+
+	this.setState({
+	    deepCrawlableDomains: aux_deepCrawlableDomains.concat(this.state.deepCrawlableDomains),
+	    resetSelection: true
+	});
+    }
+    addDomainsOnSelection(selectedRows) {
+        this.selectedRows = selectedRows;
+      }
+    
+      addDomainsForDeepCrawl(event) {
+        var aux_deepCrawlableDomains = [];
+        this.selectedRows.forEach((rowIndex) => {
+            if(this.state.deepCrawlableDomains.indexOf(this.state.recommendations[rowIndex][0]) === -1)
+            aux_deepCrawlableDomains.push(this.state.recommendations[rowIndex][0]);
+        });
+    
+        var session = this.props.session;
+        session['newPageRetrievalCriteria'] = "one";
+        session['pageRetrievalCriteria'] = "TLDs";
+        session['selected_tlds']=aux_deepCrawlableDomains.join(",");
+        session['pagesCap']=PAGE_COUNT;
+    
+        $.post(
+            '/getPages',
+            {'session': JSON.stringify(session)},
+            function(pages) {
+            var urlsfromRecommendations = Object.keys(pages["data"]["results"]).map(result=>{return result;});
+            this.setState({deepCrawlableUrls: urlsfromRecommendations.concat(this.state.deepCrawlableUrls)});
+            this.forceUpdate();
+            }.bind(this)
+        );
+    
+    
+        this.setState({
+            deepCrawlableDomains: aux_deepCrawlableDomains.concat(this.state.deepCrawlableDomains),
+            resetSelection: true
+        });
+        }
+      addDomainsFromFileForDeepCrawl() {
+        let aux_deepCrawlableUrls = this.state.deepCrawlableUrls;
+        var aux_valueLoadUrls = (this.state.valueLoadUrls!==undefined)?this.state.valueLoadUrls:[];
+        var valueLoadUrlsFromTextField = (this.state.valueLoadUrlsFromTextField!==undefined)?((this.state.valueLoadUrlsFromTextField!=="")?this.state.valueLoadUrlsFromTextField.split(/\r\n|\n/):[]):[];
+    
+        valueLoadUrlsFromTextField.forEach((value) => {
+          aux_valueLoadUrls.push(value);
+        });
+        aux_valueLoadUrls.forEach((value) => {
+          aux_deepCrawlableUrls.push(value);
+        })
+        this.setState({
+          deepCrawlableUrls: aux_deepCrawlableUrls,
+          resetSelection: true,
+          valueLoadUrls:[],
+          valueLoadUrlsFromTextField:"",
+        });
+      }
     getPages(session){
         $.post(
           '/getPages',
@@ -70,7 +150,7 @@ class DeepCrawling extends Component {
             console.log('getRecommendations FAILED ', error);
         });
     }
-    
+
     componentWillUnmount() {
         clearInterval(this.recommendationInterval)
       }
