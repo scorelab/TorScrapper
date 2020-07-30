@@ -27,6 +27,50 @@ import {
 
 class DeepCrawling extends Component {
 
+    getPages(session){
+        $.post(
+          '/getPages',
+          {'session': JSON.stringify(session)},
+          function(pages) {
+            var urlsfromDeepCrawlTag = this.getCurrentUrlsfromDeepCrawlTag(pages["data"]["results"]);
+            this.setState({deepCrawlableDomainsFromTag: urlsfromDeepCrawlTag,});
+            this.forceUpdate();
+          }.bind(this)
+        );
+      }
+    
+      getCurrentUrlsfromDeepCrawlTag(pages){
+        var urlsList = {};
+        var urlsList2 =  (Object.keys(pages).length>0)? Object.keys(pages)
+                            .map((k, index)=>{ urlsList[k]=""; }) : {};
+        return Object.keys(urlsList)
+                  .map(reco => [reco, urlsList[reco]])
+                  .sort((a, b) => ((a[1] > b[1]) ? -1 : ((a[1] < b[1]) ? 1 : 0)));
+      }
+    
+      getRecommendations() {
+        $.post(
+          '/getRecommendations',
+          { session: JSON.stringify(this.props.session), minCount: this.state.minURLCount || 10},
+          (response) => {
+          var recommendations = Object.keys(response || {})
+                      .map(reco => [reco, response[reco]])
+                      .sort((a, b) => {
+              if(b[1]['score'] === undefined)
+                  return (b[1]['count'] - a[1]['count']);
+              else {
+                  if(parseFloat(b[1]['score'].toFixed(3)) === parseFloat(a[1]['score'].toFixed(3)))
+                  return (b[1]['count'] - a[1]['count']);
+                  else return (b[1]['score'] - a[1]['score']);
+              };
+              });
+              this.setState({recommendations: recommendations})
+            }
+        ).fail((error) => {
+            console.log('getRecommendations FAILED ', error);
+        });
+    }
+    
     componentWillUnmount() {
         clearInterval(this.recommendationInterval)
       }
