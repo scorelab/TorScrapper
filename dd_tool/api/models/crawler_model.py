@@ -512,3 +512,56 @@ def _createResultModelZip(self, session):
                     return response
 
         return response
+
+     def getModelTags(self, domainId):
+
+        model_tags = get_model_tags(self._es).get(domainId)
+
+        tags = {}
+        if model_tags is not None:
+            tags = {"index": model_tags["index"]}
+            if  model_tags.get("positive") is not None:
+                tags["positive"] =  model_tags["positive"]
+            if  model_tags.get("negative") is not None:
+                tags["negative"] =  model_tags["negative"]
+
+        return tags
+
+    
+    def saveModelTags(self, session):
+
+        domainId = session["domainId"]
+
+        es_info = self._esInfo(domainId)
+
+        pos_tags = []
+        try:
+            pos_tags = session['model']['positive']
+        except KeyError:
+            print "Using default positive tags"
+
+        neg_tags = []
+        try:
+            neg_tags = session['model']['negative']
+        except KeyError:
+            print "Using default negative tags"
+
+        model_tags = self.getModelTags(domainId)
+
+        entry = {
+            domainId: {
+                "positive": pos_tags,
+                "index":  es_info["activeDomainIndex"]
+            }
+        }
+
+        update_document(entry, "config", "model_tags", self._es)
+
+        entry = {
+            domainId: {
+                "negative": neg_tags,
+                "index":  es_info["activeDomainIndex"]
+            }
+        }
+
+        update_document(entry, "config", "model_tags", self._es)
