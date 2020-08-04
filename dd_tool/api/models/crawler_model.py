@@ -477,3 +477,38 @@ def _createResultModelZip(self, session):
 
        print "\n\n\nCrawler Stopped\n\n\n"
        return "Crawler Stopped"
+
+    def getStatus(self, type, session=None):
+
+        if not session is None:
+            domainId = session["domainId"]
+
+        response = {}
+
+        try:
+            r = requests.get(self._servers[type]+"/status")
+
+            print "\n\n ACHE server status response code: ", r.status_code
+
+            if r.status_code == 200:
+                response = json.loads(r.text)
+            elif r.status_code == 404 or r.status_code == 500:
+                if not session is None:
+                    try:
+                        self.runningCrawlers[domainId][type]['status'] = "Failed to get status from server"
+                        self.crawlerStopped(type, session)
+                        return response
+                    except KeyError:
+                        return response
+
+        except ConnectionError:
+            print "\n\nFailed to connect to server for status. Server may not be running\n\n"
+            if not session is None:
+                try:
+                    self.runningCrawlers[domainId][type]['status'] = "Failed to connect to server for status. Server may not be running"
+                    self.crawlerStopped(type, session)
+                    return response
+                except KeyError:
+                    return response
+
+        return response
