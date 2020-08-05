@@ -477,3 +477,91 @@ def _createResultModelZip(self, session):
 
        print "\n\n\nCrawler Stopped\n\n\n"
        return "Crawler Stopped"
+
+    def getStatus(self, type, session=None):
+
+        if not session is None:
+            domainId = session["domainId"]
+
+        response = {}
+
+        try:
+            r = requests.get(self._servers[type]+"/status")
+
+            print "\n\n ACHE server status response code: ", r.status_code
+
+            if r.status_code == 200:
+                response = json.loads(r.text)
+            elif r.status_code == 404 or r.status_code == 500:
+                if not session is None:
+                    try:
+                        self.runningCrawlers[domainId][type]['status'] = "Failed to get status from server"
+                        self.crawlerStopped(type, session)
+                        return response
+                    except KeyError:
+                        return response
+
+        except ConnectionError:
+            print "\n\nFailed to connect to server for status. Server may not be running\n\n"
+            if not session is None:
+                try:
+                    self.runningCrawlers[domainId][type]['status'] = "Failed to connect to server for status. Server may not be running"
+                    self.crawlerStopped(type, session)
+                    return response
+                except KeyError:
+                    return response
+
+        return response
+
+     def getModelTags(self, domainId):
+
+        model_tags = get_model_tags(self._es).get(domainId)
+
+        tags = {}
+        if model_tags is not None:
+            tags = {"index": model_tags["index"]}
+            if  model_tags.get("positive") is not None:
+                tags["positive"] =  model_tags["positive"]
+            if  model_tags.get("negative") is not None:
+                tags["negative"] =  model_tags["negative"]
+
+        return tags
+
+    
+    def saveModelTags(self, session):
+
+        domainId = session["domainId"]
+
+        es_info = self._esInfo(domainId)
+
+        pos_tags = []
+        try:
+            pos_tags = session['model']['positive']
+        except KeyError:
+            print "Using default positive tags"
+
+        neg_tags = []
+        try:
+            neg_tags = session['model']['negative']
+        except KeyError:
+            print "Using default negative tags"
+
+        model_tags = self.getModelTags(domainId)
+
+        entry = {
+            domainId: {
+                "positive": pos_tags,
+                "index":  es_info["activeDomainIndex"]
+            }
+        }
+
+        update_document(entry, "config", "model_tags", self._es)
+
+        entry = {
+            domainId: {
+                "negative": neg_tags,
+                "index":  es_info["activeDomainIndex"]
+            }
+        }
+
+        update_document(entry, "config", "model_tags", self._es)
