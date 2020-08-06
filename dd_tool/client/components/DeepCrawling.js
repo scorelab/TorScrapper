@@ -203,6 +203,67 @@ class DeepCrawling extends Component {
         this.handleCloseDialogStatusCrawler = this.handleCloseDialogStatusCrawler.bind(this);
     
       }
+
+      startDeepCrawler(event) {
+        if(this.state.deepCrawlableUrls.length > 0)
+                this.setDeepcrawlTagtoPages(this.state.deepCrawlableUrls);
+      
+        this.startCrawler("deep", this.state.deepCrawlableDomainsFromTag.concat(this.state.deepCrawlableDomains));
+          }
+      
+         startCrawler(type, seeds){
+          var session = this.state.session;
+          var message = "Running";
+          this.setState({disableAcheInterfaceSignal:false, disableStopCrawlerSignal:false, disabledStartCrawler:true, messageCrawler:message});
+          this.forceUpdate();
+          $.post(
+              '/startCrawler',
+              {'session': JSON.stringify(session), "type": type, "seeds": seeds.join('|')},
+              function(message) {
+                var disableStopCrawlerFlag = false;
+                var disableAcheInterfaceFlag = false;
+                var disabledStartCrawlerFlag = true;
+                var crawlerIsNotRunningFlag = false;
+                var messageErrorCrawlerTemp = '';
+                if(message.toLowerCase() === "no seeds provided" || message.toLowerCase()=== "failed to run crawler" || message.toLowerCase()=== "failed to connect to server. server may not be running"){
+                  disableStopCrawlerFlag = true;
+                  disableAcheInterfaceFlag =true;
+                  disabledStartCrawlerFlag =false;
+                  crawlerIsNotRunningFlag =true;
+                  messageErrorCrawlerTemp = message;
+                }
+                this.setState({disableAcheInterfaceSignal: disableAcheInterfaceFlag, disableStopCrawlerSignal:disableStopCrawlerFlag, disabledStartCrawler:disabledStartCrawlerFlag, messageCrawler:message, openDialogStatusCrawler:crawlerIsNotRunningFlag, messageErrorCrawler:messageErrorCrawlerTemp });
+                this.forceUpdate();
+                this.recommendationInterval = setInterval(this.getRecommendations.bind(this), 30000);
+      
+              }.bind(this)
+          ).fail((error) => {
+            clearInterval(this.recommendationInterval);
+            console.log('startCrawler', error)
+          });;
+        }
+      
+        stopDeepCrawler(event) {
+          this.stopCrawler("deep");
+        }
+      
+        stopCrawler(type){
+          var session = this.state.session;
+          var message = "Terminating";
+          this.setState({disableAcheInterfaceSignal:true, disableStopCrawlerSignal:true, disabledStartCrawler:true, messageCrawler:message,});
+          this.forceUpdate();
+          $.post(
+            '/stopCrawler',
+            {'session': JSON.stringify(session), "type": type},
+            function(message) {
+              clearInterval(this.recommendationInterval);
+              this.setState({disableAcheInterfaceSignal:true, disableStopCrawlerSignal:true, disabledStartCrawler: false, messageCrawler:"",});
+              this.forceUpdate();
+            }.bind(this)
+          ).fail((error) => {
+             this.setState({disabledStartCrawler: false});
+          });
+        }
     render() {
         return (
             <Row>
