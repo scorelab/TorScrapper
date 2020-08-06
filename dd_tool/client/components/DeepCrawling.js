@@ -203,6 +203,172 @@ class DeepCrawling extends Component {
         this.handleCloseDialogStatusCrawler = this.handleCloseDialogStatusCrawler.bind(this);
     
       }
+
+      startDeepCrawler(event) {
+        if(this.state.deepCrawlableUrls.length > 0)
+                this.setDeepcrawlTagtoPages(this.state.deepCrawlableUrls);
+      
+        this.startCrawler("deep", this.state.deepCrawlableDomainsFromTag.concat(this.state.deepCrawlableDomains));
+          }
+      
+         startCrawler(type, seeds){
+          var session = this.state.session;
+          var message = "Running";
+          this.setState({disableAcheInterfaceSignal:false, disableStopCrawlerSignal:false, disabledStartCrawler:true, messageCrawler:message});
+          this.forceUpdate();
+          $.post(
+              '/startCrawler',
+              {'session': JSON.stringify(session), "type": type, "seeds": seeds.join('|')},
+              function(message) {
+                var disableStopCrawlerFlag = false;
+                var disableAcheInterfaceFlag = false;
+                var disabledStartCrawlerFlag = true;
+                var crawlerIsNotRunningFlag = false;
+                var messageErrorCrawlerTemp = '';
+                if(message.toLowerCase() === "no seeds provided" || message.toLowerCase()=== "failed to run crawler" || message.toLowerCase()=== "failed to connect to server. server may not be running"){
+                  disableStopCrawlerFlag = true;
+                  disableAcheInterfaceFlag =true;
+                  disabledStartCrawlerFlag =false;
+                  crawlerIsNotRunningFlag =true;
+                  messageErrorCrawlerTemp = message;
+                }
+                this.setState({disableAcheInterfaceSignal: disableAcheInterfaceFlag, disableStopCrawlerSignal:disableStopCrawlerFlag, disabledStartCrawler:disabledStartCrawlerFlag, messageCrawler:message, openDialogStatusCrawler:crawlerIsNotRunningFlag, messageErrorCrawler:messageErrorCrawlerTemp });
+                this.forceUpdate();
+                this.recommendationInterval = setInterval(this.getRecommendations.bind(this), 30000);
+      
+              }.bind(this)
+          ).fail((error) => {
+            clearInterval(this.recommendationInterval);
+            console.log('startCrawler', error)
+          });;
+        }
+      
+        stopDeepCrawler(event) {
+          this.stopCrawler("deep");
+        }
+      
+        stopCrawler(type){
+          var session = this.state.session;
+          var message = "Terminating";
+          this.setState({disableAcheInterfaceSignal:true, disableStopCrawlerSignal:true, disabledStartCrawler:true, messageCrawler:message,});
+          this.forceUpdate();
+          $.post(
+            '/stopCrawler',
+            {'session': JSON.stringify(session), "type": type},
+            function(message) {
+              clearInterval(this.recommendationInterval);
+              this.setState({disableAcheInterfaceSignal:true, disableStopCrawlerSignal:true, disabledStartCrawler: false, messageCrawler:"",});
+              this.forceUpdate();
+            }.bind(this)
+          ).fail((error) => {
+             this.setState({disabledStartCrawler: false});
+          });
+        }
+
+        addUrlsWhileCrawling(event) {
+          if(this.state.deepCrawlableUrls.length > 0)
+            this.setDeepcrawlTagtoPages(this.state.deepCrawlableUrls);
+      
+          this.addURLs();
+        }
+      
+          addURLs() {
+        $.post(
+            '/addUrls',
+            {
+          "session": JSON.stringify(this.state.session),
+          "seeds": this.state.deepCrawlableUrls.join("|")
+            },
+            (message) => {
+          this.state.deepCrawlableUrls.forEach(url => {
+              if(this.state.deepCrawlableDomainsFromTag.indexOf(url) !== -1)
+            this.state.deepCrawlableDomainsFromTag.push(url);
+          });
+      
+          this.setState({
+              deepCrawlableDomainsFromTag: this.state.deepCrawlableDomainsFromTag,
+              deepCrawlableDomains: [],
+              deepCrawlableUrls: []
+          });
+            }
+        ).fail((error) => {
+            console.log('addUrls failed', error);
+        });
+          }
+
+          handleRemoveUrlFromList(url, index){
+            var urlsList = this.state.deepCrawlableUrls;
+            var deepCrawlableUrls_aux =  urlsList.splice(index,1);
+            this.setState({deepCrawlableUrls:urlsList});
+            this.forceUpdate();
+          }
+          changeMinURLCount(event) {
+            this.setState(
+              { minURLCount: event.target.value }
+            );
+          }
+          runLoadUrlsFileQuery(txt) {
+            var allTextLines = txt.split(/\r\n|\n/);
+            this.setState({ valueLoadUrls: allTextLines, });
+          }
+
+          handleFile(event) {
+            const reader = new FileReader();
+            const file = event.target.files[0];
+            const name = (event.target.files[0]!==undefined)?event.target.files[0].name:"";
+            this.setState({nameFile:name});
+            reader.onload = (upload) => {
+              this.runLoadUrlsFileQuery(upload.target.result);
+            };
+            reader.readAsText(file);
+          }
+
+          handleOpenDialogLoadUrl = () => {
+            this.setState({openDialogLoadUrl: true});
+          };
+          handleCloseDialogLoadUrl  = () => {
+            this.setState({openDialogLoadUrl: false, newNameTerm:"", nameFile:""});
+            this.termsFromFile=[]; 
+          };
+        
+          handleCloseDialogStatusCrawler  = () => {
+            this.setState({openDialogStatusCrawler: false, });
+          };
+        
+          handleTextChangeLoadUrls(e){
+            this.setState({ valueLoadUrlsFromTextField: e.target.value});
+          }
+        
+          addURLfromFileAndTextField(){
+            this.addDomainsFromFileForDeepCrawl();
+            this.handleCloseDialogLoadUrl();
+        
+          }
+
+          setDeepcrawlTagtoPages(urls) {
+            $.post(
+              '/setPagesTag',
+              {
+                "pages": urls.join('|'),
+                "tag": 'Deep Crawl',
+                "applyTagFlag": true,
+                "session": JSON.stringify(this.state.session)
+              },
+              (message) => {
+                  urls.forEach(url => {
+                    this.state.deepCrawlableDomainsFromTag.push(url);
+                  });
+        
+                  this.setState({
+                      deepCrawlableDomainsFromTag: this.state.deepCrawlableDomainsFromTag,
+                      deepCrawlableDomains: [],
+                deepCrawlableUrls: []
+                  });
+              }
+            ).fail((error) => {
+          console.log('setPagesTag', error)
+            });
+          }
     render() {
         return (
             <Row>
@@ -426,3 +592,9 @@ class DeepCrawling extends Component {
         );
     }
 }
+
+DeepCrawling.defaultProps = {
+  backgroundColor:"#9A7BB0",
+};
+
+export default DeepCrawling;
