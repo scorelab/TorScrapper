@@ -10,6 +10,188 @@ import SwipeableViews from 'react-swipeable-views';
 import CheckboxTree from 'react-checkbox-tree';
 import IconButton from 'material-ui/IconButton';
 
+
+class LoadQueries extends React.Component {
+    constructor(props){
+      super(props);
+      this.state={
+        currentQueries:undefined,
+        checked:[],
+        expanded:[],
+        session: {},
+        flat:false,
+        queryNodes:[{
+            value: 'query',
+            label: 'Queries',
+            children: [],
+        }],
+        sfqueryNodes:[{
+            value: 'seedfinder',
+            label: 'SeedFinder Queries',
+            children: [],
+        }]
+      };
+    }
+  
+    getAvailableQueries(){
+      $.post(
+        '/getAvailableQueries',
+        {'session': JSON.stringify(this.props.session)},
+        function(queriesDomain) {
+          var selected_queries = [];
+          if(this.props.session['selected_queries'] !== undefined && this.props.session['selected_queries'] !== ""){
+            selected_queries = this.props.session['selected_queries'].split(",");
+          }
+          this.setState({currentQueries: queriesDomain, session:this.props.session, checked:selected_queries});
+        }.bind(this)
+      );
+    }
+  
+    componentWillMount(){
+      this.getAvailableQueries();
+    }
+  
+    componentWillReceiveProps(nextProps){
+      var array_selected_queries =  (nextProps.session['selected_queries']!=="")?nextProps.session['selected_queries'].split(","):[]; //since this.state.checked is an array, we need that  nextProps.session['selected_tags'] be an array
+      if(JSON.stringify(array_selected_queries) === JSON.stringify(this.state.checked) ) {
+        if((this.props.update  && this.state.expanded.length > 0) ||  (this.state.expanded.length > 0 && this.props.queryFromSearch)){
+          this.getAvailableQueries();
+        }
+        return;
+      }
+      var selected_queries = [];
+      if(nextProps.session['selected_queries'] !== undefined && nextProps.session['selected_queries'] !== "")
+      selected_queries = this.props.session['selected_queries'].split(",");
+      this.setState({ session:nextProps.session, checked:selected_queries });
+    }
+  
+    shouldComponentUpdate(nextProps, nextState){
+      if(JSON.stringify(nextState.checked) === JSON.stringify(this.state.checked) &&
+      JSON.stringify(nextState.currentQueries) === JSON.stringify(this.state.currentQueries) &&
+      JSON.stringify(nextState.expanded) === JSON.stringify(this.state.expanded)) {
+        if(this.props.update ||  this.props.queryFromSearch){ return true;}
+        else {return false;}
+      }
+      return true;
+    }
+  
+      addQuery(name, object){
+      var prev_selected_queries = [];
+  
+      if(this.state.session['selected_queries'] !== "")
+          prev_selected_queries = this.state.session['selected_queries'].split(",");
+  
+      var checked = [];
+      if(name === "seedfinder"){
+          checked = object['checked'].map((query, index)=>{
+          return "seedfinder:"+query;
+          });
+          if(prev_selected_queries.length > 0){
+          var new_prev_selected = [];
+          for(var i = 0;i < prev_selected_queries.length;++i){
+              if(!prev_selected_queries[i].includes("seedfinder"))
+              new_prev_selected.push(prev_selected_queries[i]);
+          }
+          checked = (new_prev_selected.length > 0)?new_prev_selected.concat(checked):checked;
+          }
+  
+      }else{
+          checked = object["checked"];
+          if(prev_selected_queries.length > 0){
+          var new_prev_selected = [];
+          for(var i = 0;i < prev_selected_queries.length;++i){
+              if(prev_selected_queries[i].includes("seedfinder"))
+              new_prev_selected.push(prev_selected_queries[i]);
+          }
+          checked = (new_prev_selected.length > 0)?new_prev_selected.concat(checked):checked;
+          }
+  
+      }
+      this.setState({checked: checked });
+      this.props.addQuery(checked);
+      }
+  
+    render(){
+        if(this.state.currentQueries!==undefined && Object.keys(this.state.currentQueries).length > 0){
+        var nodes = this.state.queryNodes;
+        var nodesTemp = [];
+        nodes.map((node,index)=>{
+                if(node.value === "query"){
+            node.children = [];
+            Object.keys(this.state.currentQueries).map((query, index)=>{
+                if(!query.includes("seedfinder")){
+                var labelQuery=  query + " (" + this.state.currentQueries[query] + ")"; 
+                node.children.push({value:query, label:labelQuery});
+                }
+            });
+                }
+                nodesTemp.push(node);
+        });
+  
+        var checked_queries = [];
+        for(var i = 0;i < this.state.checked.length;++i){
+            var query = this.state.checked[i];
+            if(!query.includes("seedfinder"))
+            checked_queries.push(query);
+        }
+  
+        var checked_sf_queries = [];
+        for(var i = 0;i < this.state.checked.length;++i){
+            var query = this.state.checked[i];
+            if(query.includes("seedfinder"))
+            checked_sf_queries.push(query.replace("seedfinder:",""));
+        }
+  
+        var nodes = this.state.sfqueryNodes;
+        var nodesSFTemp = [];
+        var seedfinder_queries_found = false;
+        nodes.map((node,index)=>{
+                if(node.value === "seedfinder"){
+            node.children = [];
+            Object.keys(this.state.currentQueries).map((query, index)=>{
+                if(query.includes("seedfinder")){
+                var trunc_query = query.replace("seedfinder:", "");
+                var labelQuery=  trunc_query + " (" + this.state.currentQueries[query] + ")";
+                node.children.push({value:trunc_query, label:labelQuery});
+                seedfinder_queries_found = true;
+                }
+            });
+                }
+                nodesSFTemp.push(node);
+        });
+        var seedfinder_checkbox_tree = <div />;
+        if(seedfinder_queries_found){
+            seedfinder_checkbox_tree = <CheckboxTree
+                        name={"seedfinder"}
+                        nodes={nodesSFTemp}
+                        checked={checked_sf_queries}
+                        expanded={this.state.expanded}
+                        onCheck={checked => this.addQuery("seedfinder", {checked})}
+                        onExpand={expanded => this.setState({ expanded })}
+                        showNodeIcon={false}
+                        />;
+        }
+        return(
+                <div >
+                <CheckboxTree
+        name={"query"}
+            nodes={nodesTemp}
+            checked={checked_queries}
+            expanded={this.state.expanded}
+            onCheck={checked => this.addQuery("query", {checked})}
+            onExpand={expanded => this.setState({ expanded })}
+            showNodeIcon={false}
+                />
+            {seedfinder_checkbox_tree}
+          </div>
+        );
+      }
+      return(
+        <div />
+      );
+    }
+  }
+
 class FiltersTabs extends React.Component{
 
     constructor(props) {
