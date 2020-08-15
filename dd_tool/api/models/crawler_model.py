@@ -565,3 +565,111 @@ def _createResultModelZip(self, session):
         }
 
         update_document(entry, "config", "model_tags", self._es)
+
+    def getRecommendations(self, num_pages, session):
+        """ Method to recommend tlds for deep crawling. These are tlds in the crawled relevant pages
+        which have not yet been marked for deep crawl and are sorted by the number of relevant urls
+        in the tld that were crawled.
+
+        Parameters:
+        session (json): should have domainId
+
+        Returns:
+        {<tld>:<number of relevant pages crawler>}
+        """
+
+        domainId = session['domainId']
+
+        es_info = self._esInfo(domainId)
+
+        s_fields = {
+            "tag": "Positive",
+            "index": es_info['activeDomainIndex'],
+            "doc_type": es_info['docType']
+        }
+
+        results = multifield_term_search(s_fields, 0, self._all, ['term'], self._termsIndex, 'terms', self._es)
+        pos_terms = [field['term'][0] for field in results["results"]]
+
+        unique_tlds = {}
+
+        if len(pos_terms) > 0:
+            mm_queries = []
+            for term in pos_terms:
+                mm_queries.append({'multi_match': {
+                    'query': term,
+                    'fields': [es_info['mapping']["text"], es_info['mapping']["title"]+"^2",es_info['mapping']["domain"]+"^3"],
+                    'type': 'cross_fields',
+                    'operator': 'and'
+                }})
+            query = {
+                'query':{
+                    'bool':{
+                        'must_not':{
+                            'term': {'isRelevant': 'irrelevant' }
+                        },
+                        'should': mm_queries,
+                        "minimum_number_should_match": 1
+                    }
+                }
+            }
+
+            results = exec_query(query,
+                                 ['url', 'domain'],
+                                 0, self._all,
+                                 es_info['activeDomainIndex'],
+                                 es_info['docType'],
+                                 self._es)
+
+            domain_scored_pages = {}
+            for result in results['results']:
+                if result.get('domain') is None:
+                    continue
+                domain = result['domain'][0]
+                domain_info = domain_scored_pages.get(domain)
+                if domain_info is not None:
+                    domain_info[0] = domain_info[0] + result['score']
+                    domain_info[1] = domain_info[1] + 1
+                    domain_info[2] = domain_info[0] / float(domain_info[1])
+                else:
+                    domain_info = [result['score'], 1, result['score']]
+
+                domain_scored_pages[domain] = domain_info
+
+            unique_tlds = {k:{'count':v[1],'score':v[2]} for k,v in domain_scored_pages.items()}
+
+        else:
+            query = {
+                'bool':{
+                    'must_not':{
+                        'term': {'isRelevant': 'irrelevant' }
+                    }
+                }
+            }
+            for k, v in get_unique_values('domain.exact', query, self._all, es_info['activeDomainIndex'], es_info['docType'], self._es).items():
+                if "." in k:
+                    unique_tlds[k] = {'count':v}
+
+        query = {
+            "term": {
+                "tag": {
+                    "value": "Deep Crawl"
+                }
+            }
+        }
+
+        unique_dp_tlds = {}
+
+        for k, v in get_unique_values('domain.exact', query, self._all, es_info['activeDomainIndex'], es_info['docType'], self._es).items():
+            unique_dp_tlds[k.replace("www.","")] = v
+
+        recommendations = list(set([k.replace('www.','') for k in unique_tlds.keys()]).difference(set(unique_dp_tlds.keys())))
+
+        recommended_tlds = {}
+
+        for k, v in unique_tlds.items():
+            if k in recommendations and v['count'] >= int(num_pages):
+                recommended_tlds[k] = v
+
+        return recommended_tlds
+
