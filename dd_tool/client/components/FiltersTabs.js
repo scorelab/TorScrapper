@@ -10,6 +10,123 @@ import SwipeableViews from 'react-swipeable-views';
 import CheckboxTree from 'react-checkbox-tree';
 import IconButton from 'material-ui/IconButton';
 
+class LoadCrawledData extends React.Component {
+  constructor(props){
+    super(props);
+    this.state={
+      currentCrawledTags:{"CD Relevant":0, "CD Irrelevant":0},
+      checked:[],
+      expanded:[],
+      session: {},
+      flat:false,
+      crawledNodes:[{
+        value: 'crawled',
+        label: 'Crawled Data (CD)',
+        children: [],
+      }]
+    };
+    this.intervalFuncId = undefined;
+  }
+
+  getAvailableCrawledData(){
+    $.post(
+      '/getAvailableCrawledData',
+      {'session': JSON.stringify(this.props.session)},
+      function(crawledTagDomain) {
+        var selected_crawled_tags = [];
+        if(this.props.session['selected_crawled_tags'] !== undefined && this.props.session['selected_crawled_tags'] !== ""){
+          selected_crawled_tags = this.props.session['selected_crawled_tags'].split(",");
+        }
+        this.setState({currentCrawledTags: crawledTagDomain, session:this.props.session, checked:selected_crawled_tags});
+      }.bind(this)
+    );
+  }
+
+  componentWillMount(){
+    this.getAvailableCrawledData();
+  }
+
+    setStatusInterval(){
+	this.intervalFuncId = window.setInterval(function() {this.getAvailableCrawledData();}.bind(this), 1000);
+    }
+    componentWillUnmount() {
+	console.log("LOAD CRAWLER DATA CLEAR INTERVAL");
+	console.log(this.intervalFuncId);
+    window.clearInterval(this.intervalFuncId);
+  }
+
+
+    componentWillReceiveProps(nextProps){
+	var array_selected_crawled_tags =  (nextProps.session['selected_crawled_tags']!=="")?nextProps.session['selected_crawled_tags'].split(","):[]; //since this.state.checked is an array, we need that  nextProps.session['selected_tags'] be an array
+	if(nextProps.updateCrawlerData==="updateCrawler" && this.intervalFuncId===undefined){
+	    this.setStatusInterval();
+	}
+	if(nextProps.updateCrawlerData==="stopCrawler"){
+	    window.clearInterval(this.intervalFuncId);
+	    this.intervalFuncId = undefined;
+	}
+	if(JSON.stringify(array_selected_crawled_tags) === JSON.stringify(this.state.checked) ) {
+	    if((this.props.update  && this.state.expanded.length > 0) ||  (this.state.expanded.length > 0 && nextProps.updateCrawlerData==="updateCrawler")){
+		this.getAvailableCrawledData();
+	    }
+	    return;
+	}
+    var selected_crawled_tags = [];
+    if(nextProps.session['selected_crawled_tags'] !== undefined && nextProps.session['selected_crawled_tags'] !== "")
+    selected_crawled_tags = this.props.session['selected_crawled_tags'].split(",");
+    this.setState({ session:nextProps.session, checked:selected_crawled_tags});
+  }
+
+  shouldComponentUpdate(nextProps, nextState){
+    if(JSON.stringify(nextState.checked) === JSON.stringify(this.state.checked) &&
+    JSON.stringify(nextState.currentCrawledTags) === JSON.stringify(this.state.currentCrawledTags) &&
+    JSON.stringify(nextState.expanded) === JSON.stringify(this.state.expanded)) {
+      if(nextProps.updateCrawlerData==="updateCrawler" || nextProps.updateCrawlerData==="stopCrawler"){ return true;}
+      else {return false;}
+    }
+    return true;
+  }
+
+  addCrawledTags(object){
+    var checked = object["checked"];
+    this.setState({checked: checked });
+    this.props.addCrawledTags(checked);
+  }
+
+  render(){
+    if(this.state.currentCrawledTags!==undefined && Object.keys(this.state.currentCrawledTags).length > 0){
+      var nodes = this.state.crawledNodes;
+      var nodesTemp = [];
+      nodes.map((node,index)=>{
+        if(node.value === "crawled"){
+          node.children = [];
+          Object.keys(this.state.currentCrawledTags).map((tag, index)=>{
+            var labelTag = tag+" (" +this.state.currentCrawledTags[tag]+")";
+            node.children.push({value:tag, label:labelTag});
+          });
+        }
+        nodesTemp.push(node);
+      });
+
+      return(
+        <div >
+        <CheckboxTree
+          nodes={nodesTemp}
+          checked={this.state.checked}
+          expanded={this.state.expanded}
+          onCheck={checked => this.addCrawledTags({checked})}
+          onExpand={expanded => this.setState({ expanded })}
+          showNodeIcon={false}
+        />
+        </div>
+      );
+    }
+    return(
+      <div />
+    );
+  }
+}
+
 class CircularProgressSimple extends React.Component{
   render(){
     return(
