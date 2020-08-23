@@ -127,6 +127,113 @@ class LoadCrawledData extends React.Component {
   }
 }
 
+class LoadTLDs extends React.Component {
+  constructor(props){
+    super(props);
+    this.state={
+      currentTLDs:undefined,
+      checked:[],
+      expanded:[],
+      session: {},
+      tldNodes:[{
+        value: 'tld',
+        label: 'Domains',
+        children: []
+      }]
+    };
+  }
+
+  getAvailableTLDs(){
+    $.post(
+      '/getAvailableTLDs',
+      {'session': JSON.stringify(this.props.session)},
+      function(tlds) {
+        var selected_tlds = [];
+        if(this.props.session['selected_tlds'] !== undefined && this.props.session['selected_tlds'] !== ""){
+          selected_tlds = this.props.session['selected_tlds'].split(",");
+        }
+
+        this.setState({currentTLDs: tlds, session:this.props.session, checked:selected_tlds});
+      }.bind(this)
+    );
+  }
+
+  componentWillMount(){
+    this.getAvailableTLDs();
+  }
+
+  componentWillReceiveProps(nextProps){
+    if(JSON.stringify(nextProps.session['selected_tlds']) === JSON.stringify(this.state.checked)) {
+      if(this.props.update){
+        this.getAvailableTLDs();
+      }
+      return;
+    }
+    var selected_tlds = [];
+    if(nextProps.session['selected_tlds'] !== undefined && nextProps.session['selected_tlds'] !== "")
+    selected_tlds = this.props.session['selected_tlds'].split(",");
+    // Calculate new state
+    this.setState({ session:nextProps.session, checked:selected_tlds });
+  }
+
+  shouldComponentUpdate(nextProps, nextState){
+    if(JSON.stringify(nextState.checked) === JSON.stringify(this.state.checked) &&
+    JSON.stringify(nextState.currentTLDs) === JSON.stringify(this.state.currentTLDs) &&
+    JSON.stringify(nextState.expanded) === JSON.stringify(this.state.expanded)) {
+      if(this.props.update){ return true;}
+      else {return false;}
+    }
+    return true;
+  }
+
+  addTLD(object){
+    var checked = object["checked"];
+    this.setState({checked: checked });
+    this.props.addTLD(checked);
+  }
+
+    render(){
+	if(this.state.currentTLDs!==undefined && Object.keys(this.state.currentTLDs).length > 0){
+	    var nodes = this.state.tldNodes;
+	    var nodesTemp = [];
+	    nodes.map((node,index)=>{
+		if(node.value === "tld"){
+		    var items = Object.keys(this.state.currentTLDs).map((key)=>{
+			return [key, this.state.currentTLDs[key]];
+		    });
+		    items.sort(function(first, second) {
+			if(parseInt(first[1]) < parseInt(second[1]))
+			    return 1;
+			else return -1;
+		    });
+		    node.children = [];
+		    items.map((tld, index)=>{
+			var labelTLD=  tld[0] +" (" +tld[1]+")"; //query (ex. blue car) , index (ex. 0,1,2...)
+			node.children.push({value:tld[0], label:labelTLD});
+		    });
+		}
+		nodesTemp.push(node);
+	    });
+
+      return(
+        <div>
+        <CheckboxTree
+          nodes={nodesTemp}
+          checked={this.state.checked}
+          expanded={this.state.expanded}
+          onCheck={checked => this.addTLD({checked})}
+          onExpand={expanded => this.setState({ expanded })}
+          showNodeIcon={false}
+        />
+        </div>
+      );
+    }
+    return(
+      <div />
+    );
+  }
+}
+
 class CircularProgressSimple extends React.Component{
   render(){
     return(
