@@ -10,6 +10,14 @@ import SwipeableViews from 'react-swipeable-views';
 import CheckboxTree from 'react-checkbox-tree';
 import IconButton from 'material-ui/IconButton';
 
+class CircularProgressSimple extends React.Component{
+  render(){
+    return(
+    <div style={{borderColor:"green", marginLeft:"50%"}}>
+      <CircularProgress size={30} thickness={7} />
+    </div>
+  );}
+}
 
 class LoadQueries extends React.Component {
     constructor(props){
